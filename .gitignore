@@ -205,3 +205,56 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ==================================
+# Docker
+# ==================================
+*.log
+docker-compose*.override.yml
+
+# ==================================
+# IDE / Editors
+# ==================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ==================================
+# OS Files
+# ==================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ==================================
+# Project Specific
+# ==================================
+# Local environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Alembic
+alembic/versions/*.pyc
+
+# Media/uploads (if any)
+media/
+uploads/
+static/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
