@@ -1,0 +1,140 @@
+"""
+FastAPI Dependencies Module
+
+Dependencies are reusable components injected into route handlers.
+FastAPI's Depends() function manages their lifecycle.
+
+WHY Dependency Injection?
+=========================
+1. Reusability: Write once, use in many routes
+2. Testing: Easy to mock dependencies in tests
+3. Separation of Concerns: Routes focus on business logic
+4. Lifecycle Management: FastAPI handles creation/cleanup
+
+Common Dependency Patterns:
+- Database sessions (per-request)
+- Authentication (verify user)
+- Pagination parameters
+- Rate limiting
+- Caching
+"""
+
+from typing import Annotated
+
+from fastapi import Depends, Query
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+
+# =============================================================================
+# Type Aliases with Annotated
+# =============================================================================
+# Annotated allows attaching metadata to type hints.
+# This makes route signatures cleaner and more reusable.
+#
+# Instead of writing:
+#   def get_books(db: Session = Depends(get_db)):
+#
+# You can write:
+#   def get_books(db: DbSession):
+
+DbSession = Annotated[Session, Depends(get_db)]
+
+
+# =============================================================================
+# Pagination Parameters
+# =============================================================================
+class PaginationParams:
+    """
+    Common pagination parameters for list endpoints.
+
+    This class-based dependency captures pagination logic:
+    - page: Which page to return (1-indexed for user-friendliness)
+    - per_page: How many items per page
+    - skip: Calculated offset for database query
+
+    Usage in route:
+        @router.get("/books/")
+        def get_books(
+            db: DbSession,
+            pagination: PaginationParams = Depends()
+        ):
+            books = db.query(Book).offset(pagination.skip).limit(pagination.per_page).all()
+    """
+
+    def __init__(
+        self,
+        page: int = Query(
+            default=1,
+            ge=1,
+            description="Page number (1-indexed)",
+            examples=[1, 2, 3],
+        ),
+        per_page: int = Query(
+            default=10,
+            ge=1,
+            le=100,  # Limit to prevent abuse
+            description="Number of items per page (max 100)",
+            examples=[10, 25, 50],
+        ),
+    ) -> None:
+        """
+        Initialize pagination parameters.
+
+        Query() is used because these come from URL query parameters:
+            GET /books/?page=2&per_page=20
+
+        Args:
+            page: Page number (starts at 1 for user-friendliness)
+            per_page: Number of items per page
+        """
+        self.page = page
+        self.per_page = per_page
+
+    @property
+    def skip(self) -> int:
+        """
+        Calculate the number of records to skip.
+
+        Database OFFSET uses 0-based indexing, but users expect 1-based pages.
+        Page 1 → skip 0 items
+        Page 2 → skip per_page items
+        Page 3 → skip 2 * per_page items
+
+        Returns:
+            Number of records to skip in database query
+        """
+        return (self.page - 1) * self.per_page
+
+
+# Type alias for cleaner route signatures
+Pagination = Annotated[PaginationParams, Depends()]
+
+
+# =============================================================================
+# Common Query Parameters
+# =============================================================================
+def get_search_query(
+    q: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="Search query string",
+        examples=["orwell", "science fiction"],
+    ),
+) -> str | None:
+    """
+    Common search query parameter.
+
+    Returns None if no search query provided, otherwise the search string.
+
+    Usage:
+        @router.get("/books/")
+        def search_books(search: str | None = Depends(get_search_query)):
+            if search:
+                # Filter books by search term
+    """
+    return q
+
+
+SearchQuery = Annotated[str | None, Depends(get_search_query)]

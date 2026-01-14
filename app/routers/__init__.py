@@ -1,0 +1,29 @@
+"""
+API Routers Package
+
+This package contains FastAPI routers that handle API endpoints.
+
+WHY Routers?
+============
+1. Organization: Group related endpoints together
+2. Modularity: Each router can have its own prefix, tags, dependencies
+3. Maintainability: Easy to find and modify endpoint code
+4. Scalability: Add new routers without changing existing code
+
+Router Structure:
+- books.py: /api/v1/books/* endpoints
+- authors.py: /api/v1/authors/* endpoints
+- genres.py: /api/v1/genres/* endpoints
+
+Each router is imported and registered in main.py.
+"""
+
+from app.routers.books import router as books_router
+from app.routers.authors import router as authors_router
+from app.routers.genres import router as genres_router
+
+__all__ = [
+    "books_router",
+    "authors_router",
+    "genres_router",
+]

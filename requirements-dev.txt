@@ -1,0 +1,53 @@
+# =============================================================================
+# Development Dependencies
+# =============================================================================
+# These packages are used for development, testing, and code quality.
+# Install with: pip install -r requirements-dev.txt
+#
+# NOTE: This file includes the main requirements as well.
+# You don't need to install both files separately.
+
+# Include production dependencies
+-r requirements.txt
+
+# =============================================================================
+# Testing
+# =============================================================================
+# pytest: Test framework with powerful fixtures and assertions
+pytest==7.4.4
+
+# pytest-asyncio: Support for async tests
+pytest-asyncio==0.23.3
+
+# pytest-cov: Code coverage reporting
+pytest-cov==4.1.0
+
+# =============================================================================
+# Code Quality
+# =============================================================================
+# black: Code formatter (enforces consistent style)
+black==24.1.1
+
+# isort: Import statement organizer (works with black)
+isort==5.13.2
+
+# flake8: Linter (catches errors and style issues)
+flake8==7.0.0
+
+# mypy: Static type checker
+mypy==1.8.0
+
+# =============================================================================
+# Development Tools
+# =============================================================================
+# ipython: Enhanced Python shell (great for debugging)
+ipython==8.20.0
+
+# pre-commit: Git hooks for code quality (optional but recommended)
+pre-commit==3.6.0
+
+# =============================================================================
+# Type Stubs (for mypy)
+# =============================================================================
+# These provide type hints for external libraries
+types-python-dateutil==2.8.19.14

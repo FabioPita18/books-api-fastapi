@@ -1,0 +1,147 @@
+# =============================================================================
+# Docker Compose Configuration for Books API
+# =============================================================================
+# This file defines all services needed to run the Books API locally.
+#
+# USAGE:
+#   # Start all services
+#   docker-compose up -d
+#
+#   # View logs
+#   docker-compose logs -f
+#
+#   # Stop all services
+#   docker-compose down
+#
+#   # Stop and remove volumes (reset data)
+#   docker-compose down -v
+#
+# SERVICES:
+# 1. api: The FastAPI application
+# 2. db: PostgreSQL database
+# 3. redis: Redis cache and rate limiting store
+#
+# HOW SERVICES COMMUNICATE:
+# - All services are on the same Docker network (books-network)
+# - Services can reach each other by service name (e.g., api can connect to 'db')
+# - Only api is exposed to the host machine (port 8000)
+
+version: "3.8"
+
+services:
+  # ===========================================================================
+  # API Service (FastAPI Application)
+  # ===========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production  # Use the production stage
+    container_name: books-api
+    # Restart policy: always restart unless manually stopped
+    restart: unless-stopped
+    ports:
+      # Map host port 8000 to container port 8000
+      # Format: "host:container"
+      - "8000:8000"
+    environment:
+      # Override settings for Docker environment
+      # Database URL uses 'db' as host (service name)
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/books_db
+      # Redis URL uses 'redis' as host (service name)
+      - REDIS_URL=redis://redis:6379/0
+      - DEBUG=True
+      - LOG_LEVEL=INFO
+    # Wait for dependencies to be ready before starting
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Mount local code for development (hot reload)
+    volumes:
+      - .:/app
+    # Use custom network
+    networks:
+      - books-network
+    # Health check for the API
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # Database Service (PostgreSQL)
+  # ===========================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: books-db
+    restart: unless-stopped
+    environment:
+      # PostgreSQL configuration
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: books_db
+      # Performance tuning for development
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    # Persist data in a named volume
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Expose port to host for direct database access (development only)
+    ports:
+      - "5432:5432"
+    networks:
+      - books-network
+    # Health check to verify database is ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d books_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ===========================================================================
+  # Redis Service (Caching & Rate Limiting)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: books-redis
+    restart: unless-stopped
+    # Redis configuration for development
+    command: redis-server --appendonly yes
+    # Persist data in a named volume
+    volumes:
+      - redis_data:/data
+    # Expose port to host for direct Redis access (development only)
+    ports:
+      - "6379:6379"
+    networks:
+      - books-network
+    # Health check to verify Redis is ready
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+# =============================================================================
+# Networks
+# =============================================================================
+# Custom bridge network for service communication
+networks:
+  books-network:
+    driver: bridge
+    name: books-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+# Named volumes persist data between container restarts
+volumes:
+  postgres_data:
+    name: books-postgres-data
+  redis_data:
+    name: books-redis-data
