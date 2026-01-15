@@ -279,8 +279,8 @@ def seed_database(clear_existing: bool = True) -> None:
         print(f"  - Authors: {len(authors)}")
         print(f"  - Genres: {len(genres)}")
         print(f"  - Books: {len(books)}")
-        print(f"\nYou can now access the API at http://localhost:8000")
-        print(f"API documentation at http://localhost:8000/docs")
+        print(f"\nYou can now access the API at http://localhost:8001")
+        print(f"API documentation at http://localhost:8001/docs")
 
     except Exception as e:
         print(f"Error seeding database: {e}")

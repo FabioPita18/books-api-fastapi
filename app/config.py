@@ -1,5 +1,5 @@
 """
-Application Configuration Module
+Application Configuration Module (Phase 1)
 
 This module uses Pydantic Settings for type-safe configuration management.
 
@@ -24,10 +24,15 @@ Usage:
 
     settings = get_settings()
     print(settings.app_name)
+
+PHASE 1 vs PHASE 2:
+===================
+- Phase 1: Database, security, logging (active)
+- Phase 2: Redis, caching, rate limiting (commented out)
 """
 
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -44,6 +49,12 @@ class Settings(BaseSettings):
 
     Field(...) is used for required fields with descriptions.
     default=value is used for optional fields with defaults.
+
+    SECURITY NOTE:
+    ==============
+    - secret_key and database credentials have validators
+    - Placeholder values will raise errors at startup
+    - This prevents accidental deployment with insecure defaults
     """
 
     # -------------------------------------------------------------------------
@@ -66,15 +77,19 @@ class Settings(BaseSettings):
         description="Host to bind the server to"
     )
     port: int = Field(
-        default=8000,
+        default=8001,  # Custom port (not default 8000)
         description="Port to bind the server to"
+    )
+    environment: str = Field(
+        default="development",
+        description="Environment: development, staging, production"
     )
 
     # -------------------------------------------------------------------------
     # Database Settings
     # -------------------------------------------------------------------------
     database_url: str = Field(
-        default="postgresql://postgres:postgres@localhost:5432/books_db",
+        default="postgresql://books_admin:password@localhost:5433/books_production",
         description="PostgreSQL connection URL"
     )
     db_pool_size: int = Field(
@@ -87,34 +102,40 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
-    # Redis Settings
+    # Phase 2: Redis Settings (Not active yet)
     # -------------------------------------------------------------------------
-    redis_url: str = Field(
-        default="redis://localhost:6379/0",
-        description="Redis connection URL for caching"
-    )
-    cache_ttl: int = Field(
-        default=300,
-        description="Default cache time-to-live in seconds"
-    )
+    # These settings will be enabled when implementing caching and rate limiting.
+    # Uncomment when ready to implement Phase 2 features.
+    #
+    # redis_url: str = Field(
+    #     default="redis://localhost:6379/0",
+    #     description="Redis connection URL for caching"
+    # )
+    # cache_ttl: int = Field(
+    #     default=300,
+    #     description="Default cache time-to-live in seconds"
+    # )
 
     # -------------------------------------------------------------------------
-    # Rate Limiting Settings
+    # Phase 2: Rate Limiting Settings (Not active yet)
     # -------------------------------------------------------------------------
-    rate_limit_requests: int = Field(
-        default=100,
-        description="Number of requests allowed per time window"
-    )
-    rate_limit_window: int = Field(
-        default=60,
-        description="Rate limit time window in seconds"
-    )
+    # These settings will be enabled when implementing rate limiting.
+    # Uncomment when ready to implement Phase 2 features.
+    #
+    # rate_limit_requests: int = Field(
+    #     default=100,
+    #     description="Number of requests allowed per time window"
+    # )
+    # rate_limit_window: int = Field(
+    #     default=60,
+    #     description="Rate limit time window in seconds"
+    # )
 
     # -------------------------------------------------------------------------
     # Security Settings
     # -------------------------------------------------------------------------
     secret_key: str = Field(
-        default="change-me-in-production",
+        default="REPLACE_WITH_YOUR_GENERATED_SECRET_KEY",
         description="Secret key for cryptographic operations"
     )
     api_key_header: str = Field(
@@ -166,6 +187,14 @@ class Settings(BaseSettings):
         """
         return [origin.strip() for origin in self.allowed_origins.split(",")]
 
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production environment."""
+        return self.environment.lower() == "production"
+
+    # -------------------------------------------------------------------------
+    # Validators
+    # -------------------------------------------------------------------------
     @field_validator("log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:
@@ -190,6 +219,55 @@ class Settings(BaseSettings):
             raise ValueError(f"log_level must be one of {valid_levels}")
         return v.upper()
 
+    @field_validator("secret_key")
+    @classmethod
+    def validate_secret_key(cls, v: str) -> str:
+        """
+        Validate that secret_key is not a placeholder value.
+
+        SECURITY: This prevents accidental deployment with insecure defaults.
+        The application will fail to start if SECRET_KEY is not properly set.
+
+        Args:
+            v: The secret key value
+
+        Returns:
+            The validated secret key
+
+        Raises:
+            ValueError: If secret key is a placeholder or too short
+        """
+        placeholder_indicators = [
+            "REPLACE_WITH",
+            "change-me",
+            "your-secret",
+            "generate-with",
+        ]
+
+        for indicator in placeholder_indicators:
+            if indicator.lower() in v.lower():
+                raise ValueError(
+                    "SECRET_KEY contains a placeholder value. "
+                    "Generate a secure key with: openssl rand -hex 32"
+                )
+
+        if len(v) < 32:
+            raise ValueError(
+                "SECRET_KEY must be at least 32 characters long. "
+                "Generate a secure key with: openssl rand -hex 32"
+            )
+
+        return v
+
+    @field_validator("environment")
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
+        """Validate environment is a known value."""
+        valid_envs = {"development", "staging", "production"}
+        if v.lower() not in valid_envs:
+            raise ValueError(f"environment must be one of {valid_envs}")
+        return v.lower()
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -207,6 +285,12 @@ def get_settings() -> Settings:
     - .env is read only once at startup
     - All parts of the app share the same settings
     - No performance cost for repeated get_settings() calls
+
+    SECURITY:
+    =========
+    - Settings are validated at startup
+    - Placeholder values cause immediate errors
+    - This prevents accidental insecure deployments
 
     Usage:
         # In any module

@@ -3,7 +3,15 @@
 # =============================================================================
 # This file defines all services needed to run the Books API locally.
 #
+# SECURITY NOTE:
+# This configuration uses environment variables for ALL credentials.
+# Copy .env.example to .env and configure with your secure values BEFORE starting.
+#
 # USAGE:
+#   # First time setup:
+#   cp .env.example .env
+#   # Edit .env with your secure credentials (see SETUP.md)
+#
 #   # Start all services
 #   docker-compose up -d
 #
@@ -16,17 +24,21 @@
 #   # Stop and remove volumes (reset data)
 #   docker-compose down -v
 #
-# SERVICES:
-# 1. api: The FastAPI application
-# 2. db: PostgreSQL database
-# 3. redis: Redis cache and rate limiting store
+# SERVICES (Phase 1):
+# 1. api: The FastAPI application (port 8001)
+# 2. db: PostgreSQL database (port 5433)
+#
+# PHASE 2 SERVICES (not yet implemented):
+# - redis: Caching & rate limiting (see commented section below)
 #
 # HOW SERVICES COMMUNICATE:
 # - All services are on the same Docker network (books-network)
-# - Services can reach each other by service name (e.g., api can connect to 'db')
-# - Only api is exposed to the host machine (port 8000)
-
-version: "3.8"
+# - Services can reach each other by service name (e.g., api connects to 'db')
+# - Custom ports are used to avoid conflicts with local services
+#
+# CUSTOM PORTS (security best practice - avoid defaults):
+# - API: 8001 (instead of default 8000)
+# - PostgreSQL: 5433 (instead of default 5432)
 
 services:
   # ===========================================================================
@@ -41,23 +53,34 @@ services:
     # Restart policy: always restart unless manually stopped
     restart: unless-stopped
     ports:
-      # Map host port 8000 to container port 8000
+      # Map host port to container port
       # Format: "host:container"
-      - "8000:8000"
+      # Using custom port 8001 to avoid conflicts with local services
+      - "${API_PORT:-8001}:8000"
     environment:
-      # Override settings for Docker environment
-      # Database URL uses 'db' as host (service name)
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/books_db
-      # Redis URL uses 'redis' as host (service name)
-      - REDIS_URL=redis://redis:6379/0
-      - DEBUG=True
-      - LOG_LEVEL=INFO
-    # Wait for dependencies to be ready before starting
+      # =======================================================================
+      # SECURITY: All credentials loaded from environment variables
+      # =======================================================================
+      # Database URL constructed from individual env vars for flexibility
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # Application settings
+      - APP_NAME=${APP_NAME:-Books API}
+      - DEBUG=${DEBUG:-False}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      # -----------------------------------------------------------------------
+      # Phase 2: Redis configuration (uncomment when implementing caching)
+      # - REDIS_URL=redis://redis:6379/0
+      # - CACHE_TTL=${CACHE_TTL:-300}
+      # -----------------------------------------------------------------------
+    # Wait for database to be ready before starting
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      # Phase 2: Uncomment when adding Redis
+      # redis:
+      #   condition: service_healthy
     # Mount local code for development (hot reload)
     volumes:
       - .:/app
@@ -75,57 +98,68 @@ services:
   # ===========================================================================
   # Database Service (PostgreSQL)
   # ===========================================================================
+  # SECURITY: Uses custom credentials and port (not defaults)
   db:
     image: postgres:16-alpine
     container_name: books-db
     restart: unless-stopped
     environment:
-      # PostgreSQL configuration
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: books_db
+      # =======================================================================
+      # SECURITY: All credentials loaded from environment variables
+      # NEVER use default 'postgres' user/password in production!
+      # =======================================================================
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       # Performance tuning for development
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     # Persist data in a named volume
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Expose port to host for direct database access (development only)
+    # Expose port to host for direct database access
+    # Using custom port 5433 to avoid conflicts with local PostgreSQL
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     networks:
       - books-network
     # Health check to verify database is ready
+    # Uses environment variables for user and database
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d books_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
   # ===========================================================================
-  # Redis Service (Caching & Rate Limiting)
+  # Phase 2: Redis Service (Caching & Rate Limiting)
   # ===========================================================================
-  redis:
-    image: redis:7-alpine
-    container_name: books-redis
-    restart: unless-stopped
-    # Redis configuration for development
-    command: redis-server --appendonly yes
-    # Persist data in a named volume
-    volumes:
-      - redis_data:/data
-    # Expose port to host for direct Redis access (development only)
-    ports:
-      - "6379:6379"
-    networks:
-      - books-network
-    # Health check to verify Redis is ready
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
+  # UNCOMMENT THIS SECTION WHEN IMPLEMENTING PHASE 2 FEATURES:
+  # - Response caching
+  # - Rate limiting
+  # - Session storage
+  #
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: books-redis
+  #   restart: unless-stopped
+  #   # Redis configuration for development
+  #   command: redis-server --appendonly yes
+  #   # Persist data in a named volume
+  #   volumes:
+  #     - redis_data:/data
+  #   # Expose port to host for direct Redis access (development only)
+  #   ports:
+  #     - "${REDIS_PORT:-6379}:6379"
+  #   networks:
+  #     - books-network
+  #   # Health check to verify Redis is ready
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 5s
 
 # =============================================================================
 # Networks
@@ -143,5 +177,6 @@ networks:
 volumes:
   postgres_data:
     name: books-postgres-data
-  redis_data:
-    name: books-redis-data
+  # Phase 2: Uncomment when adding Redis
+  # redis_data:
+  #   name: books-redis-data
