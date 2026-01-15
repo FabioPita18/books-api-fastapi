@@ -5,19 +5,22 @@ CRUD endpoints for genres.
 Follows the same patterns as the books router.
 """
 
+import math
 from typing import List
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
-from app.dependencies import DbSession
-from app.models import Genre
+from app.dependencies import DbSession, Pagination
+from app.models import Genre, Book
 from app.schemas import (
     GenreCreate,
     GenreUpdate,
     GenreResponse,
+    BookResponse,
+    BookListResponse,
 )
 
 router = APIRouter(
@@ -72,6 +75,57 @@ def get_genre(
     """Get a single genre by ID."""
     genre = get_genre_or_404(db, genre_id)
     return GenreResponse.model_validate(genre)
+
+
+@router.get(
+    "/{genre_id}/books",
+    response_model=BookListResponse,
+    summary="Get books in genre",
+    description="Get all books in a specific genre.",
+)
+def get_genre_books(
+    genre_id: int,
+    db: DbSession,
+    pagination: Pagination,
+) -> BookListResponse:
+    """
+    Get all books in a specific genre with pagination.
+
+    Returns a paginated list of books that belong to the specified genre.
+    """
+    # First verify the genre exists
+    get_genre_or_404(db, genre_id)
+
+    # Count total books in this genre
+    count_stmt = (
+        select(func.count(Book.id))
+        .join(Book.genres)
+        .where(Genre.id == genre_id)
+    )
+    total = db.execute(count_stmt).scalar() or 0
+
+    # Calculate total pages
+    pages = math.ceil(total / pagination.per_page) if total > 0 else 0
+
+    # Fetch books for current page
+    stmt = (
+        select(Book)
+        .join(Book.genres)
+        .where(Genre.id == genre_id)
+        .options(selectinload(Book.authors), selectinload(Book.genres))
+        .offset(pagination.skip)
+        .limit(pagination.per_page)
+        .order_by(Book.created_at.desc())
+    )
+    books = db.execute(stmt).scalars().all()
+
+    return BookListResponse(
+        items=[BookResponse.model_validate(book) for book in books],
+        total=total,
+        page=pagination.page,
+        per_page=pagination.per_page,
+        pages=pages,
+    )
 
 
 @router.post(

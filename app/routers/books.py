@@ -16,10 +16,10 @@ import math
 from typing import List
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, extract
 from sqlalchemy.orm import selectinload
 
-from app.dependencies import DbSession, Pagination
+from app.dependencies import DbSession, Pagination, BookFilters
 from app.models import Book, Author, Genre
 from app.schemas import (
     BookCreate,
@@ -87,33 +87,124 @@ def get_book_or_404(db: DbSession, book_id: int) -> Book:
     return book
 
 
+def apply_book_filters(stmt, filters: BookFilters, db: DbSession):
+    """
+    Apply search and filter parameters to a book query.
+
+    This function builds a dynamic query based on the provided filters:
+    - q: General search across title and author name
+    - title: Filter by book title (partial match)
+    - author: Filter by author name (partial match)
+    - genre_id: Filter by genre
+    - min_year/max_year: Filter by publication year range
+    - min_price/max_price: Filter by price range
+
+    Args:
+        stmt: SQLAlchemy select statement to modify
+        filters: BookSearchParams instance with filter values
+        db: Database session for subqueries
+
+    Returns:
+        Modified SQLAlchemy select statement with filters applied
+    """
+    # General search (searches both title and author name)
+    if filters.q:
+        search_term = f"%{filters.q.lower()}%"
+        # Subquery to find books by author name
+        author_book_ids = (
+            select(Book.id)
+            .join(Book.authors)
+            .where(func.lower(Author.name).like(search_term))
+        )
+        stmt = stmt.where(
+            or_(
+                func.lower(Book.title).like(search_term),
+                Book.id.in_(author_book_ids),
+            )
+        )
+
+    # Filter by title (partial match, case-insensitive)
+    if filters.title:
+        stmt = stmt.where(func.lower(Book.title).like(f"%{filters.title.lower()}%"))
+
+    # Filter by author name (partial match, case-insensitive)
+    if filters.author:
+        author_book_ids = (
+            select(Book.id)
+            .join(Book.authors)
+            .where(func.lower(Author.name).like(f"%{filters.author.lower()}%"))
+        )
+        stmt = stmt.where(Book.id.in_(author_book_ids))
+
+    # Filter by genre ID
+    if filters.genre_id:
+        genre_book_ids = (
+            select(Book.id)
+            .join(Book.genres)
+            .where(Genre.id == filters.genre_id)
+        )
+        stmt = stmt.where(Book.id.in_(genre_book_ids))
+
+    # Filter by publication year range
+    if filters.min_year:
+        stmt = stmt.where(
+            extract("year", Book.publication_date) >= filters.min_year
+        )
+    if filters.max_year:
+        stmt = stmt.where(
+            extract("year", Book.publication_date) <= filters.max_year
+        )
+
+    # Filter by price range
+    if filters.min_price is not None:
+        stmt = stmt.where(Book.price >= filters.min_price)
+    if filters.max_price is not None:
+        stmt = stmt.where(Book.price <= filters.max_price)
+
+    return stmt
+
+
 # =============================================================================
 # CRUD Endpoints
 # =============================================================================
 
 @router.get(
-    "/",
+    "/search",
     response_model=BookListResponse,
-    summary="List all books",
-    description="Get a paginated list of all books with their authors and genres.",
+    summary="Search books",
+    description="Search books by title, author, genre, year range, or price range.",
 )
-def list_books(
+def search_books(
     db: DbSession,
     pagination: Pagination,
+    filters: BookFilters,
 ) -> BookListResponse:
     """
-    List all books with pagination.
+    Search and filter books with pagination.
 
-    This endpoint demonstrates:
-    - Pagination using query parameters
-    - Eager loading of relationships
-    - Response model for structured output
+    This endpoint provides comprehensive search capabilities:
+    - q: General search across title and author name
+    - title: Filter by book title
+    - author: Filter by author name
+    - genre_id: Filter by genre
+    - min_year/max_year: Publication year range
+    - min_price/max_price: Price range
 
-    Returns:
-        Paginated list of books with metadata
+    All filters can be combined. Results are paginated.
+
+    Examples:
+        GET /api/books/search?q=orwell
+        GET /api/books/search?genre_id=1&min_year=1900&max_year=1960
+        GET /api/books/search?author=hemingway&min_price=10
     """
-    # Count total books for pagination metadata
-    count_stmt = select(func.count()).select_from(Book)
+    # Build base query
+    base_stmt = select(Book)
+
+    # Apply filters
+    filtered_stmt = apply_book_filters(base_stmt, filters, db)
+
+    # Count total matching books
+    count_stmt = select(func.count()).select_from(filtered_stmt.subquery())
     total = db.execute(count_stmt).scalar() or 0
 
     # Calculate total pages
@@ -121,7 +212,64 @@ def list_books(
 
     # Fetch books for current page with relationships
     stmt = (
-        select(Book)
+        filtered_stmt
+        .options(selectinload(Book.authors), selectinload(Book.genres))
+        .offset(pagination.skip)
+        .limit(pagination.per_page)
+        .order_by(Book.created_at.desc())
+    )
+    books = db.execute(stmt).scalars().all()
+
+    return BookListResponse(
+        items=[BookResponse.model_validate(book) for book in books],
+        total=total,
+        page=pagination.page,
+        per_page=pagination.per_page,
+        pages=pages,
+    )
+
+
+@router.get(
+    "/",
+    response_model=BookListResponse,
+    summary="List all books",
+    description="Get a paginated list of all books with optional filtering.",
+)
+def list_books(
+    db: DbSession,
+    pagination: Pagination,
+    filters: BookFilters,
+) -> BookListResponse:
+    """
+    List all books with pagination and optional filtering.
+
+    Supports all the same filters as /search endpoint:
+    - title: Filter by book title
+    - author: Filter by author name
+    - genre_id: Filter by genre
+    - min_year/max_year: Publication year range
+    - min_price/max_price: Price range
+
+    Returns:
+        Paginated list of books with metadata
+    """
+    # Build base query
+    base_stmt = select(Book)
+
+    # Apply filters if any are provided
+    if filters.has_filters:
+        base_stmt = apply_book_filters(base_stmt, filters, db)
+
+    # Count total books for pagination metadata
+    count_stmt = select(func.count()).select_from(base_stmt.subquery())
+    total = db.execute(count_stmt).scalar() or 0
+
+    # Calculate total pages
+    pages = math.ceil(total / pagination.per_page) if total > 0 else 0
+
+    # Fetch books for current page with relationships
+    stmt = (
+        base_stmt
         .options(selectinload(Book.authors), selectinload(Book.genres))
         .offset(pagination.skip)
         .limit(pagination.per_page)

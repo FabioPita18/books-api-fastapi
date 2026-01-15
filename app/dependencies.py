@@ -138,3 +138,107 @@ def get_search_query(
 
 
 SearchQuery = Annotated[str | None, Depends(get_search_query)]
+
+
+# =============================================================================
+# Book Search Filters
+# =============================================================================
+class BookSearchParams:
+    """
+    Search and filter parameters for book endpoints.
+
+    Supports:
+    - Text search (title, author name)
+    - Genre filtering
+    - Publication year range
+    - Price range
+
+    All parameters are optional and can be combined.
+
+    Usage:
+        GET /api/books/?title=orwell&genre_id=1&min_year=1940&max_year=1960
+        GET /api/books/search/?q=dystopian&min_price=10&max_price=20
+    """
+
+    def __init__(
+        self,
+        q: str | None = Query(
+            default=None,
+            min_length=1,
+            max_length=100,
+            description="Search query (searches title and author name)",
+            examples=["orwell", "dystopian"],
+        ),
+        title: str | None = Query(
+            default=None,
+            min_length=1,
+            max_length=100,
+            description="Filter by title (partial match, case-insensitive)",
+            examples=["1984", "pride"],
+        ),
+        author: str | None = Query(
+            default=None,
+            min_length=1,
+            max_length=100,
+            description="Filter by author name (partial match, case-insensitive)",
+            examples=["orwell", "austen"],
+        ),
+        genre_id: int | None = Query(
+            default=None,
+            ge=1,
+            description="Filter by genre ID",
+            examples=[1, 2],
+        ),
+        min_year: int | None = Query(
+            default=None,
+            ge=1000,
+            le=9999,
+            description="Minimum publication year",
+            examples=[1900, 1950],
+        ),
+        max_year: int | None = Query(
+            default=None,
+            ge=1000,
+            le=9999,
+            description="Maximum publication year",
+            examples=[2000, 2024],
+        ),
+        min_price: float | None = Query(
+            default=None,
+            ge=0,
+            description="Minimum price",
+            examples=[0, 10.00],
+        ),
+        max_price: float | None = Query(
+            default=None,
+            ge=0,
+            description="Maximum price",
+            examples=[20.00, 50.00],
+        ),
+    ) -> None:
+        self.q = q
+        self.title = title
+        self.author = author
+        self.genre_id = genre_id
+        self.min_year = min_year
+        self.max_year = max_year
+        self.min_price = min_price
+        self.max_price = max_price
+
+    @property
+    def has_filters(self) -> bool:
+        """Check if any filters are applied."""
+        return any([
+            self.q,
+            self.title,
+            self.author,
+            self.genre_id,
+            self.min_year,
+            self.max_year,
+            self.min_price,
+            self.max_price,
+        ])
+
+
+# Type alias for cleaner route signatures
+BookFilters = Annotated[BookSearchParams, Depends()]

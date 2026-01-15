@@ -5,18 +5,21 @@ CRUD endpoints for authors.
 Follows the same patterns as the books router.
 """
 
+import math
 from typing import List
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
-from app.dependencies import DbSession
-from app.models import Author
+from app.dependencies import DbSession, Pagination
+from app.models import Author, Book
 from app.schemas import (
     AuthorCreate,
     AuthorUpdate,
     AuthorResponse,
+    BookResponse,
+    BookListResponse,
 )
 
 router = APIRouter(
@@ -71,6 +74,58 @@ def get_author(
     """Get a single author by ID."""
     author = get_author_or_404(db, author_id)
     return AuthorResponse.model_validate(author)
+
+
+@router.get(
+    "/{author_id}/books",
+    response_model=BookListResponse,
+    summary="Get books by author",
+    description="Get all books written by a specific author.",
+)
+def get_author_books(
+    author_id: int,
+    db: DbSession,
+    pagination: Pagination,
+) -> BookListResponse:
+    """
+    Get all books by a specific author with pagination.
+
+    Returns a paginated list of books where the specified author
+    is listed as one of the authors.
+    """
+    # First verify the author exists
+    get_author_or_404(db, author_id)
+
+    # Count total books by this author
+    count_stmt = (
+        select(func.count(Book.id))
+        .join(Book.authors)
+        .where(Author.id == author_id)
+    )
+    total = db.execute(count_stmt).scalar() or 0
+
+    # Calculate total pages
+    pages = math.ceil(total / pagination.per_page) if total > 0 else 0
+
+    # Fetch books for current page
+    stmt = (
+        select(Book)
+        .join(Book.authors)
+        .where(Author.id == author_id)
+        .options(selectinload(Book.authors), selectinload(Book.genres))
+        .offset(pagination.skip)
+        .limit(pagination.per_page)
+        .order_by(Book.created_at.desc())
+    )
+    books = db.execute(stmt).scalars().all()
+
+    return BookListResponse(
+        items=[BookResponse.model_validate(book) for book in books],
+        total=total,
+        page=pagination.page,
+        per_page=pagination.per_page,
+        pages=pages,
+    )
 
 
 @router.post(
