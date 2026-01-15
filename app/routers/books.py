@@ -27,6 +27,13 @@ from app.schemas import (
     BookResponse,
     BookListResponse,
 )
+from app.services.cache import (
+    cache_get,
+    cache_set,
+    make_cache_key,
+    invalidate_book_cache,
+)
+from app.config import get_settings
 
 # =============================================================================
 # Router Configuration
@@ -299,8 +306,7 @@ def get_book(
     """
     Get a single book by its ID.
 
-    Path parameters (like book_id) are automatically parsed from the URL.
-    FastAPI validates that book_id is an integer.
+    Uses Redis caching to improve performance for frequently accessed books.
 
     Args:
         book_id: The ID of the book to retrieve
@@ -312,8 +318,21 @@ def get_book(
     Raises:
         HTTPException: 404 if book not found
     """
+    # Try to get from cache first
+    cache_key = make_cache_key("book", book_id)
+    cached = cache_get(cache_key)
+    if cached:
+        return BookResponse.model_validate(cached)
+
+    # Not in cache, fetch from database
     book = get_book_or_404(db, book_id)
-    return BookResponse.model_validate(book)
+    response = BookResponse.model_validate(book)
+
+    # Cache the result
+    settings = get_settings()
+    cache_set(cache_key, response.model_dump(mode="json"), ttl=settings.cache_ttl_books)
+
+    return response
 
 
 @router.post(
@@ -391,6 +410,9 @@ def create_book(
     db.add(book)
     db.commit()
     db.refresh(book)
+
+    # Invalidate related caches
+    invalidate_book_cache()
 
     return BookResponse.model_validate(book)
 
@@ -471,6 +493,9 @@ def update_book(
     db.commit()
     db.refresh(book)
 
+    # Invalidate related caches
+    invalidate_book_cache(book_id)
+
     return BookResponse.model_validate(book)
 
 
@@ -501,3 +526,6 @@ def delete_book(
     book = get_book_or_404(db, book_id)
     db.delete(book)
     db.commit()
+
+    # Invalidate related caches
+    invalidate_book_cache(book_id)

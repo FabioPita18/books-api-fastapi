@@ -38,6 +38,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
 from app.routers import books_router, authors_router, genres_router
+from app.services.cache import get_redis_client, close_redis_connection, get_cache_stats
 
 # =============================================================================
 # Logging Configuration
@@ -77,21 +78,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info(f"Debug mode: {settings.debug}")
     logger.info(f"API version: {settings.api_version}")
 
-    # Here you could:
-    # - Initialize database connection pools
-    # - Connect to Redis
-    # - Load ML models
-    # - Start background tasks
+    # Initialize Redis connection
+    redis_client = get_redis_client()
+    if redis_client:
+        logger.info("Redis caching enabled")
+    else:
+        logger.warning("Redis unavailable - caching disabled")
 
     yield  # Application runs here
 
     # ----- SHUTDOWN -----
     logger.info(f"Shutting down {settings.app_name}...")
 
-    # Here you could:
-    # - Close database connections
-    # - Flush caches
-    # - Cancel background tasks
+    # Close Redis connection
+    close_redis_connection()
 
 
 # =============================================================================
@@ -241,15 +241,14 @@ Rate limiting will be implemented to ensure fair usage.
         - Kubernetes liveness/readiness probes
         - Monitoring systems
 
-        Returns basic API status. Could be extended to check:
-        - Database connectivity
-        - Redis connectivity
-        - External service availability
+        Returns API status including cache connectivity.
         """
+        cache_stats = get_cache_stats()
         return {
             "status": "healthy",
             "app": settings.app_name,
             "version": settings.api_version,
+            "cache": cache_stats,
         }
 
     @app.get(

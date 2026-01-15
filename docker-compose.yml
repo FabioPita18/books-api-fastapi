@@ -24,12 +24,10 @@
 #   # Stop and remove volumes (reset data)
 #   docker-compose down -v
 #
-# SERVICES (Phase 1):
+# SERVICES:
 # 1. api: The FastAPI application (port 8001)
 # 2. db: PostgreSQL database (port 5433)
-#
-# PHASE 2 SERVICES (not yet implemented):
-# - redis: Caching & rate limiting (see commented section below)
+# 3. redis: Caching & rate limiting (port 6379)
 #
 # HOW SERVICES COMMUNICATE:
 # - All services are on the same Docker network (books-network)
@@ -69,18 +67,15 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - SECRET_KEY=${SECRET_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
-      # -----------------------------------------------------------------------
-      # Phase 2: Redis configuration (uncomment when implementing caching)
-      # - REDIS_URL=redis://redis:6379/0
-      # - CACHE_TTL=${CACHE_TTL:-300}
-      # -----------------------------------------------------------------------
-    # Wait for database to be ready before starting
+      # Redis configuration
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_TTL=${CACHE_TTL:-300}
+    # Wait for database and redis to be ready before starting
     depends_on:
       db:
         condition: service_healthy
-      # Phase 2: Uncomment when adding Redis
-      # redis:
-      #   condition: service_healthy
+      redis:
+        condition: service_healthy
     # Mount local code for development (hot reload)
     volumes:
       - .:/app
@@ -132,34 +127,29 @@ services:
       start_period: 10s
 
   # ===========================================================================
-  # Phase 2: Redis Service (Caching & Rate Limiting)
+  # Redis Service (Caching & Rate Limiting)
   # ===========================================================================
-  # UNCOMMENT THIS SECTION WHEN IMPLEMENTING PHASE 2 FEATURES:
-  # - Response caching
-  # - Rate limiting
-  # - Session storage
-  #
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: books-redis
-  #   restart: unless-stopped
-  #   # Redis configuration for development
-  #   command: redis-server --appendonly yes
-  #   # Persist data in a named volume
-  #   volumes:
-  #     - redis_data:/data
-  #   # Expose port to host for direct Redis access (development only)
-  #   ports:
-  #     - "${REDIS_PORT:-6379}:6379"
-  #   networks:
-  #     - books-network
-  #   # Health check to verify Redis is ready
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 5s
+  redis:
+    image: redis:7-alpine
+    container_name: books-redis
+    restart: unless-stopped
+    # Redis configuration for development
+    command: redis-server --appendonly yes
+    # Persist data in a named volume
+    volumes:
+      - redis_data:/data
+    # Expose port to host for direct Redis access (development only)
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - books-network
+    # Health check to verify Redis is ready
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 # =============================================================================
 # Networks
@@ -177,6 +167,5 @@ networks:
 volumes:
   postgres_data:
     name: books-postgres-data
-  # Phase 2: Uncomment when adding Redis
-  # redis_data:
-  #   name: books-redis-data
+  redis_data:
+    name: books-redis-data

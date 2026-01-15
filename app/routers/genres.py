@@ -22,6 +22,7 @@ from app.schemas import (
     BookResponse,
     BookListResponse,
 )
+from app.services.cache import invalidate_genre_cache
 
 router = APIRouter(
     prefix="/genres",
@@ -161,6 +162,9 @@ def create_genre(
             detail=f"Genre with name '{genre_data.name}' already exists",
         )
 
+    # Invalidate related caches
+    invalidate_genre_cache()
+
     return GenreResponse.model_validate(genre)
 
 
@@ -192,6 +196,9 @@ def update_genre(
             detail=f"Genre with name '{genre_data.name}' already exists",
         )
 
+    # Invalidate related caches
+    invalidate_genre_cache(genre_id)
+
     return GenreResponse.model_validate(genre)
 
 
@@ -209,3 +216,6 @@ def delete_genre(
     genre = get_genre_or_404(db, genre_id)
     db.delete(genre)
     db.commit()
+
+    # Invalidate related caches
+    invalidate_genre_cache(genre_id)

@@ -102,19 +102,28 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
-    # Phase 2: Redis Settings (Not active yet)
+    # Redis Settings
     # -------------------------------------------------------------------------
-    # These settings will be enabled when implementing caching and rate limiting.
-    # Uncomment when ready to implement Phase 2 features.
-    #
-    # redis_url: str = Field(
-    #     default="redis://localhost:6379/0",
-    #     description="Redis connection URL for caching"
-    # )
-    # cache_ttl: int = Field(
-    #     default=300,
-    #     description="Default cache time-to-live in seconds"
-    # )
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis connection URL for caching"
+    )
+    cache_ttl: int = Field(
+        default=300,
+        description="Default cache time-to-live in seconds (5 minutes)"
+    )
+    cache_ttl_books: int = Field(
+        default=300,
+        description="Cache TTL for book data (5 minutes)"
+    )
+    cache_ttl_search: int = Field(
+        default=120,
+        description="Cache TTL for search results (2 minutes)"
+    )
+    cache_ttl_lists: int = Field(
+        default=600,
+        description="Cache TTL for author/genre lists (10 minutes)"
+    )
 
     # -------------------------------------------------------------------------
     # Phase 2: Rate Limiting Settings (Not active yet)

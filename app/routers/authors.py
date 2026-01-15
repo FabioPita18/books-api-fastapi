@@ -21,6 +21,7 @@ from app.schemas import (
     BookResponse,
     BookListResponse,
 )
+from app.services.cache import invalidate_author_cache
 
 router = APIRouter(
     prefix="/authors",
@@ -149,6 +150,9 @@ def create_author(
     db.commit()
     db.refresh(author)
 
+    # Invalidate related caches
+    invalidate_author_cache()
+
     return AuthorResponse.model_validate(author)
 
 
@@ -173,6 +177,9 @@ def update_author(
     db.commit()
     db.refresh(author)
 
+    # Invalidate related caches
+    invalidate_author_cache(author_id)
+
     return AuthorResponse.model_validate(author)
 
 
@@ -190,3 +197,6 @@ def delete_author(
     author = get_author_or_404(db, author_id)
     db.delete(author)
     db.commit()
+
+    # Invalidate related caches
+    invalidate_author_cache(author_id)
