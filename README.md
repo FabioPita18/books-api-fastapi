@@ -2,12 +2,26 @@
 
 > A production-ready RESTful API for managing books, authors, and genres with Redis caching, rate limiting, and API key authentication.
 
+[![Live API](https://img.shields.io/badge/Live_API-Railway-blueviolet?logo=railway)](https://books-api-fastapi-production.up.railway.app/docs)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis)](https://redis.io/)
 [![Tests](https://img.shields.io/badge/tests-91%20passing-success)](https://github.com/FabioPita18/books-api-fastapi/actions)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)](https://www.docker.com/)
+
+## 🌐 Live Demo
+
+**Try the API now:** [https://books-api-fastapi-production.up.railway.app](https://books-api-fastapi-production.up.railway.app)
+
+| Resource | URL |
+|----------|-----|
+| Swagger UI | [/docs](https://books-api-fastapi-production.up.railway.app/docs) |
+| ReDoc | [/redoc](https://books-api-fastapi-production.up.railway.app/redoc) |
+| Health Check | [/health](https://books-api-fastapi-production.up.railway.app/health) |
+| Books API | [/api/v1/books/](https://books-api-fastapi-production.up.railway.app/api/v1/books/) |
+| Authors API | [/api/v1/authors/](https://books-api-fastapi-production.up.railway.app/api/v1/authors/) |
+| Genres API | [/api/v1/genres/](https://books-api-fastapi-production.up.railway.app/api/v1/genres/) |
 
 ## 📋 Overview
 
@@ -405,4 +419,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built by [Fabio Pita](https://github.com/FabioPita18)** | **[View Documentation](https://github.com/FabioPita18/books-api-fastapi)**
+**Built by [Fabio Pita](https://github.com/FabioPita18)** | **[Live API](https://books-api-fastapi-production.up.railway.app/docs)** | **[GitHub](https://github.com/FabioPita18/books-api-fastapi)**
