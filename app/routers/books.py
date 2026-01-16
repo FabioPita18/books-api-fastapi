@@ -10,12 +10,13 @@ This is the most comprehensive router, demonstrating:
 - Relationship management
 - Request/response validation
 - OpenAPI documentation
+- Rate limiting
 """
 
 import math
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select, func, or_, extract
 from sqlalchemy.orm import selectinload
 
@@ -33,7 +34,10 @@ from app.services.cache import (
     make_cache_key,
     invalidate_book_cache,
 )
+from app.services.rate_limiter import limiter
 from app.config import get_settings
+
+settings = get_settings()
 
 # =============================================================================
 # Router Configuration
@@ -181,7 +185,9 @@ def apply_book_filters(stmt, filters: BookFilters, db: DbSession):
     summary="Search books",
     description="Search books by title, author, genre, year range, or price range.",
 )
+@limiter.limit(settings.rate_limit_search)
 def search_books(
+    request: Request,
     db: DbSession,
     pagination: Pagination,
     filters: BookFilters,
@@ -242,7 +248,9 @@ def search_books(
     summary="List all books",
     description="Get a paginated list of all books with optional filtering.",
 )
+@limiter.limit(settings.rate_limit_default)
 def list_books(
+    request: Request,
     db: DbSession,
     pagination: Pagination,
     filters: BookFilters,
@@ -299,7 +307,9 @@ def list_books(
     summary="Get a book by ID",
     description="Retrieve detailed information about a specific book.",
 )
+@limiter.limit(settings.rate_limit_default)
 def get_book(
+    request: Request,
     book_id: int,
     db: DbSession,
 ) -> BookResponse:
@@ -342,7 +352,9 @@ def get_book(
     summary="Create a new book",
     description="Create a new book with optional author and genre associations.",
 )
+@limiter.limit(settings.rate_limit_write)
 def create_book(
+    request: Request,
     book_data: BookCreate,
     db: DbSession,
 ) -> BookResponse:
@@ -423,7 +435,9 @@ def create_book(
     summary="Update a book",
     description="Update an existing book's information and associations.",
 )
+@limiter.limit(settings.rate_limit_write)
 def update_book(
+    request: Request,
     book_id: int,
     book_data: BookUpdate,
     db: DbSession,
@@ -505,7 +519,9 @@ def update_book(
     summary="Delete a book",
     description="Permanently delete a book from the database.",
 )
+@limiter.limit(settings.rate_limit_write)
 def delete_book(
+    request: Request,
     book_id: int,
     db: DbSession,
 ) -> None:

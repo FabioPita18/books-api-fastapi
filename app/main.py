@@ -34,11 +34,15 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
 from app.routers import books_router, authors_router, genres_router
 from app.services.cache import get_redis_client, close_redis_connection, get_cache_stats
+from app.services.rate_limiter import limiter, rate_limit_exceeded_handler
 
 # =============================================================================
 # Logging Configuration
@@ -138,6 +142,14 @@ Rate limiting will be implemented to ensure fair usage.
         # Only show docs in debug mode (production consideration)
         # docs_url="/docs" if settings.debug else None,
     )
+
+    # -------------------------------------------------------------------------
+    # Rate Limiting
+    # -------------------------------------------------------------------------
+    # Attach the limiter to the app state so it can be accessed by decorators
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
     # -------------------------------------------------------------------------
     # CORS Middleware
@@ -241,7 +253,7 @@ Rate limiting will be implemented to ensure fair usage.
         - Kubernetes liveness/readiness probes
         - Monitoring systems
 
-        Returns API status including cache connectivity.
+        Returns API status including cache connectivity and rate limiting.
         """
         cache_stats = get_cache_stats()
         return {
@@ -249,6 +261,10 @@ Rate limiting will be implemented to ensure fair usage.
             "app": settings.app_name,
             "version": settings.api_version,
             "cache": cache_stats,
+            "rate_limiting": {
+                "enabled": settings.rate_limit_enabled,
+                "default_limit": settings.rate_limit_default,
+            },
         }
 
     @app.get(

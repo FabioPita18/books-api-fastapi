@@ -126,19 +126,24 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
-    # Phase 2: Rate Limiting Settings (Not active yet)
+    # Rate Limiting Settings
     # -------------------------------------------------------------------------
-    # These settings will be enabled when implementing rate limiting.
-    # Uncomment when ready to implement Phase 2 features.
-    #
-    # rate_limit_requests: int = Field(
-    #     default=100,
-    #     description="Number of requests allowed per time window"
-    # )
-    # rate_limit_window: int = Field(
-    #     default=60,
-    #     description="Rate limit time window in seconds"
-    # )
+    rate_limit_enabled: bool = Field(
+        default=True,
+        description="Enable rate limiting"
+    )
+    rate_limit_default: str = Field(
+        default="100/minute",
+        description="Default rate limit for read endpoints"
+    )
+    rate_limit_write: str = Field(
+        default="30/minute",
+        description="Rate limit for write endpoints (POST, PUT, DELETE)"
+    )
+    rate_limit_search: str = Field(
+        default="60/minute",
+        description="Rate limit for search endpoints"
+    )
 
     # -------------------------------------------------------------------------
     # Security Settings

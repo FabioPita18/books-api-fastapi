@@ -8,10 +8,11 @@ Follows the same patterns as the books router.
 import math
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
+from app.config import get_settings
 from app.dependencies import DbSession, Pagination
 from app.models import Author, Book
 from app.schemas import (
@@ -22,6 +23,9 @@ from app.schemas import (
     BookListResponse,
 )
 from app.services.cache import invalidate_author_cache
+from app.services.rate_limiter import limiter
+
+settings = get_settings()
 
 router = APIRouter(
     prefix="/authors",
@@ -55,7 +59,8 @@ def get_author_or_404(db: DbSession, author_id: int) -> Author:
     summary="List all authors",
     description="Get a list of all authors in the system.",
 )
-def list_authors(db: DbSession) -> List[AuthorResponse]:
+@limiter.limit(settings.rate_limit_default)
+def list_authors(request: Request, db: DbSession) -> List[AuthorResponse]:
     """List all authors."""
     stmt = select(Author).order_by(Author.name)
     authors = db.execute(stmt).scalars().all()
@@ -68,7 +73,9 @@ def list_authors(db: DbSession) -> List[AuthorResponse]:
     summary="Get an author by ID",
     description="Retrieve detailed information about a specific author.",
 )
+@limiter.limit(settings.rate_limit_default)
 def get_author(
+    request: Request,
     author_id: int,
     db: DbSession,
 ) -> AuthorResponse:
@@ -83,7 +90,9 @@ def get_author(
     summary="Get books by author",
     description="Get all books written by a specific author.",
 )
+@limiter.limit(settings.rate_limit_default)
 def get_author_books(
+    request: Request,
     author_id: int,
     db: DbSession,
     pagination: Pagination,
@@ -136,7 +145,9 @@ def get_author_books(
     summary="Create a new author",
     description="Create a new author in the system.",
 )
+@limiter.limit(settings.rate_limit_write)
 def create_author(
+    request: Request,
     author_data: AuthorCreate,
     db: DbSession,
 ) -> AuthorResponse:
@@ -162,7 +173,9 @@ def create_author(
     summary="Update an author",
     description="Update an existing author's information.",
 )
+@limiter.limit(settings.rate_limit_write)
 def update_author(
+    request: Request,
     author_id: int,
     author_data: AuthorUpdate,
     db: DbSession,
@@ -189,7 +202,9 @@ def update_author(
     summary="Delete an author",
     description="Permanently delete an author from the database.",
 )
+@limiter.limit(settings.rate_limit_write)
 def delete_author(
+    request: Request,
     author_id: int,
     db: DbSession,
 ) -> None:

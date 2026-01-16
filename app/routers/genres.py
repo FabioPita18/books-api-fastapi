@@ -8,11 +8,12 @@ Follows the same patterns as the books router.
 import math
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
+from app.config import get_settings
 from app.dependencies import DbSession, Pagination
 from app.models import Genre, Book
 from app.schemas import (
@@ -23,6 +24,9 @@ from app.schemas import (
     BookListResponse,
 )
 from app.services.cache import invalidate_genre_cache
+from app.services.rate_limiter import limiter
+
+settings = get_settings()
 
 router = APIRouter(
     prefix="/genres",
@@ -56,7 +60,8 @@ def get_genre_or_404(db: DbSession, genre_id: int) -> Genre:
     summary="List all genres",
     description="Get a list of all genres in the system.",
 )
-def list_genres(db: DbSession) -> List[GenreResponse]:
+@limiter.limit(settings.rate_limit_default)
+def list_genres(request: Request, db: DbSession) -> List[GenreResponse]:
     """List all genres."""
     stmt = select(Genre).order_by(Genre.name)
     genres = db.execute(stmt).scalars().all()
@@ -69,7 +74,9 @@ def list_genres(db: DbSession) -> List[GenreResponse]:
     summary="Get a genre by ID",
     description="Retrieve detailed information about a specific genre.",
 )
+@limiter.limit(settings.rate_limit_default)
 def get_genre(
+    request: Request,
     genre_id: int,
     db: DbSession,
 ) -> GenreResponse:
@@ -84,7 +91,9 @@ def get_genre(
     summary="Get books in genre",
     description="Get all books in a specific genre.",
 )
+@limiter.limit(settings.rate_limit_default)
 def get_genre_books(
+    request: Request,
     genre_id: int,
     db: DbSession,
     pagination: Pagination,
@@ -136,7 +145,9 @@ def get_genre_books(
     summary="Create a new genre",
     description="Create a new genre in the system.",
 )
+@limiter.limit(settings.rate_limit_write)
 def create_genre(
+    request: Request,
     genre_data: GenreCreate,
     db: DbSession,
 ) -> GenreResponse:
@@ -174,7 +185,9 @@ def create_genre(
     summary="Update a genre",
     description="Update an existing genre's information.",
 )
+@limiter.limit(settings.rate_limit_write)
 def update_genre(
+    request: Request,
     genre_id: int,
     genre_data: GenreUpdate,
     db: DbSession,
@@ -208,7 +221,9 @@ def update_genre(
     summary="Delete a genre",
     description="Permanently delete a genre from the database.",
 )
+@limiter.limit(settings.rate_limit_write)
 def delete_genre(
+    request: Request,
     genre_id: int,
     db: DbSession,
 ) -> None:
