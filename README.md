@@ -1,13 +1,13 @@
-# Books API with Rate Limiting
+# Books API
 
-> A production-ready RESTful API for managing books with Redis caching, rate limiting, and comprehensive OpenAPI documentation.
+> A production-ready RESTful API for managing books, authors, and genres with Redis caching, rate limiting, and API key authentication.
 
-[![Live API](https://img.shields.io/badge/API-live-brightgreen)](https://books-api.railway.app)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)](https://www.python.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis)](https://redis.io/)
+[![Tests](https://img.shields.io/badge/tests-91%20passing-success)](https://github.com/FabioPita18/books-api-fastapi/actions)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/tests-passing-success)](https://github.com/yourusername/books-api-fastapi/actions)
-[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](https://github.com/yourusername/books-api-fastapi)
 
 ## 📋 Overview
 
@@ -123,11 +123,7 @@ GET    /redoc                     # ReDoc documentation
 GET    /openapi.json              # OpenAPI schema
 ```
 
-## 📸 API Documentation
-
-![Swagger UI](docs/screenshots/swagger-ui.png)
-
-### Example Requests
+## Example Requests
 
 **Get a book (no auth required):**
 
@@ -191,7 +187,7 @@ curl -X GET "http://localhost:8001/api/v1/books/search?author=orwell&min_year=19
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/books-api-fastapi.git
+git clone https://github.com/FabioPita18/books-api-fastapi.git
 cd books-api-fastapi
 
 # Create virtual environment
@@ -409,5 +405,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**API Status**: ✅ Live at https://books-api.railway.app  
-**Documentation**: 📚 https://books-api.railway.app/docs
+**Built by [Fabio Pita](https://github.com/FabioPita18)** | **[View Documentation](https://github.com/FabioPita18/books-api-fastapi)**
