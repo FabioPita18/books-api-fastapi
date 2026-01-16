@@ -55,44 +55,56 @@ A FastAPI-based API providing:
 - [x] Rate limiting (100 free, 1000 with API key)
 - [x] API key authentication
 - [x] Auto-generated OpenAPI documentation
-- [x] 85%+ test coverage
+- [x] 91 tests with high coverage
 - [x] Docker containerization
 - [x] CI/CD pipeline with GitHub Actions
 - [x] Database migrations with Alembic
 
 ### Future Enhancements
 - [ ] OAuth2 authentication
-- [ ] Pagination for large result sets
 - [ ] Book recommendations algorithm
 - [ ] Review and rating system
 - [ ] Elasticsearch for advanced search
 - [ ] GraphQL endpoint
+- [ ] WebSocket for real-time updates
 
 ## 📡 API Endpoints
 
 ### Books
 ```
-GET    /api/books/                # List all books (paginated)
-GET    /api/books/{id}/           # Get book details
-GET    /api/books/search/         # Search books by title/author
-POST   /api/books/                # Create new book (requires API key)
-PUT    /api/books/{id}/           # Update book (requires API key)
-DELETE /api/books/{id}/           # Delete book (requires API key)
+GET    /api/v1/books/             # List all books (paginated, filterable)
+GET    /api/v1/books/{id}         # Get book details
+GET    /api/v1/books/search       # Search books with filters
+POST   /api/v1/books/             # Create new book (requires API key)
+PUT    /api/v1/books/{id}         # Update book (requires API key)
+DELETE /api/v1/books/{id}         # Delete book (requires API key)
 ```
 
 ### Authors
 ```
-GET    /api/authors/              # List all authors
-GET    /api/authors/{id}/         # Get author details
-GET    /api/authors/{id}/books/   # Get books by author
-POST   /api/authors/              # Create author (requires API key)
+GET    /api/v1/authors/           # List all authors
+GET    /api/v1/authors/{id}       # Get author details
+GET    /api/v1/authors/{id}/books # Get books by author (paginated)
+POST   /api/v1/authors/           # Create author (requires API key)
+PUT    /api/v1/authors/{id}       # Update author (requires API key)
+DELETE /api/v1/authors/{id}       # Delete author (requires API key)
 ```
 
 ### Genres
 ```
-GET    /api/genres/               # List all genres
-GET    /api/genres/{id}/          # Get genre details
-GET    /api/genres/{id}/books/    # Get books in genre
+GET    /api/v1/genres/            # List all genres
+GET    /api/v1/genres/{id}        # Get genre details
+GET    /api/v1/genres/{id}/books  # Get books in genre (paginated)
+POST   /api/v1/genres/            # Create genre (requires API key)
+PUT    /api/v1/genres/{id}        # Update genre (requires API key)
+DELETE /api/v1/genres/{id}        # Delete genre (requires API key)
+```
+
+### API Keys (Admin)
+```
+GET    /api/v1/api-keys/          # List all API keys (requires API key)
+POST   /api/v1/api-keys/          # Create new API key (requires API key)
+DELETE /api/v1/api-keys/{id}      # Revoke API key (requires API key)
 ```
 
 ### Documentation
@@ -106,10 +118,24 @@ GET    /openapi.json              # OpenAPI schema
 
 ![Swagger UI](docs/screenshots/swagger-ui.png)
 
-### Example Request
+### Example Requests
+
+**Get a book (no auth required):**
 ```bash
-curl -X GET "https://books-api.railway.app/api/books/1" \
-  -H "X-API-Key: your-api-key-here"
+curl -X GET "http://localhost:8001/api/v1/books/1"
+```
+
+**Create a book (API key required):**
+```bash
+curl -X POST "http://localhost:8001/api/v1/books/" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key-here" \
+  -d '{"title": "The Pragmatic Programmer"}'
+```
+
+**Search books with filters:**
+```bash
+curl -X GET "http://localhost:8001/api/v1/books/search?author=orwell&min_year=1940"
 ```
 
 ### Example Response
@@ -144,9 +170,8 @@ curl -X GET "https://books-api.railway.app/api/books/1" \
 
 ### Prerequisites
 - Python 3.11+
-- PostgreSQL 15+
-- Redis 7+
-- Docker (optional)
+- Docker & Docker Compose (recommended)
+- Or: PostgreSQL 16+ and Redis 7+ (for local setup without Docker)
 
 ### Quick Start
 ```bash
@@ -175,8 +200,8 @@ python scripts/seed_data.py
 uvicorn app.main:app --reload
 ```
 
-API will be available at `http://localhost:8000`  
-Documentation at `http://localhost:8000/docs`
+API will be available at `http://localhost:8001`
+Documentation at `http://localhost:8001/docs`
 
 ### Docker Setup (Recommended)
 ```bash
@@ -272,32 +297,42 @@ docker run -p 8000:8000 \
 ```
 books-api-fastapi/
 ├── app/
-│   ├── main.py              # FastAPI application
-│   ├── config.py            # Configuration
-│   ├── database.py          # Database connection
-│   ├── models/              # SQLAlchemy models
+│   ├── main.py              # FastAPI application entry point
+│   ├── config.py            # Pydantic Settings configuration
+│   ├── database.py          # SQLAlchemy engine and session
+│   ├── dependencies.py      # FastAPI dependency injection
+│   ├── models/              # SQLAlchemy ORM models
 │   │   ├── book.py
 │   │   ├── author.py
-│   │   └── genre.py
-│   ├── schemas/             # Pydantic schemas
+│   │   ├── genre.py
+│   │   └── api_key.py       # API key model
+│   ├── schemas/             # Pydantic request/response schemas
 │   │   ├── book.py
 │   │   ├── author.py
-│   │   └── genre.py
-│   ├── routers/             # API endpoints
+│   │   ├── genre.py
+│   │   └── api_key.py
+│   ├── routers/             # API route handlers
 │   │   ├── books.py
 │   │   ├── authors.py
-│   │   └── genres.py
-│   ├── services/            # Business logic
-│   │   ├── cache.py         # Redis caching
-│   │   └── rate_limit.py    # Rate limiting
-│   └── utils/               # Helper functions
-├── tests/
+│   │   ├── genres.py
+│   │   └── api_keys.py      # API key management
+│   └── services/            # Business logic
+│       ├── cache.py         # Redis caching
+│       ├── rate_limiter.py  # Rate limiting with slowapi
+│       └── auth.py          # API key authentication
+├── tests/                   # pytest test suite (91 tests)
+│   ├── conftest.py          # Shared fixtures
 │   ├── test_books.py
 │   ├── test_authors.py
-│   └── test_cache.py
+│   ├── test_genres.py
+│   ├── test_search.py       # Search & filtering tests
+│   └── test_auth.py         # Authentication tests
 ├── alembic/                 # Database migrations
 ├── scripts/
-│   └── seed_data.py         # Sample data
+│   └── seed_data.py         # Sample data seeder
+├── .github/
+│   └── workflows/
+│       └── ci.yml           # GitHub Actions CI/CD
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
@@ -308,10 +343,11 @@ books-api-fastapi/
 
 ### Rate Limiting Tiers
 
-| Tier | Requests/Hour | Authentication |
-|------|---------------|----------------|
-| Free | 100 | None (IP-based) |
-| Premium | 1,000 | API Key required |
+| Endpoint Type | Rate Limit | Notes |
+|---------------|------------|-------|
+| Default (GET) | 100/minute | IP-based |
+| Search | 60/minute | IP-based |
+| Write (POST/PUT/DELETE) | 30/minute | Requires API key |
 
 ### Caching Strategy
 
