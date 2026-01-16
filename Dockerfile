@@ -111,4 +111,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 # Default command
 # Uses PORT environment variable (set by Railway/cloud platforms) with fallback to 8000
 # Runs database migrations before starting the server
-CMD sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+CMD sh -c "echo 'Starting migrations...' && alembic upgrade head && echo 'Migrations complete. Starting uvicorn on port ${PORT:-8000}...' && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level debug"
