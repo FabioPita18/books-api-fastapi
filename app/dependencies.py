@@ -19,12 +19,15 @@ Common Dependency Patterns:
 - Caching
 """
 
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import Depends, Query
+from fastapi import Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import get_db
+
+settings = get_settings()
 
 # =============================================================================
 # Type Aliases with Annotated
@@ -242,3 +245,84 @@ class BookSearchParams:
 
 # Type alias for cleaner route signatures
 BookFilters = Annotated[BookSearchParams, Depends()]
+
+
+# =============================================================================
+# API Key Authentication
+# =============================================================================
+def get_api_key(
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    db: Session = Depends(get_db),
+) -> Optional[str]:
+    """
+    Extract and validate API key from request header.
+
+    This dependency is used for endpoints that REQUIRE authentication.
+    It will raise 401 if the key is missing or invalid.
+
+    Args:
+        x_api_key: API key from X-API-Key header
+        db: Database session
+
+    Returns:
+        The validated API key string
+
+    Raises:
+        HTTPException: 401 if authentication fails
+    """
+    # Import here to avoid circular imports
+    from app.services.auth import validate_api_key
+
+    # Check if authentication is disabled (for development)
+    if not settings.api_key_enabled:
+        return None
+
+    # Check if key is provided
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key required. Provide X-API-Key header.",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+
+    # Validate the key
+    api_key = validate_api_key(db, x_api_key)
+    if api_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired API key.",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+
+    return x_api_key
+
+
+def get_optional_api_key(
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    db: Session = Depends(get_db),
+) -> Optional[str]:
+    """
+    Extract API key from request header (optional).
+
+    This dependency is used for endpoints that optionally accept authentication.
+    It returns None if no key is provided (no error raised).
+
+    Args:
+        x_api_key: API key from X-API-Key header
+        db: Database session
+
+    Returns:
+        The API key string if provided and valid, None otherwise
+    """
+    from app.services.auth import validate_api_key
+
+    if not x_api_key:
+        return None
+
+    api_key = validate_api_key(db, x_api_key)
+    return x_api_key if api_key else None
+
+
+# Type aliases for cleaner route signatures
+RequireAPIKey = Annotated[str, Depends(get_api_key)]
+OptionalAPIKey = Annotated[Optional[str], Depends(get_optional_api_key)]

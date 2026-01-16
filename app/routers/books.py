@@ -20,7 +20,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select, func, or_, extract
 from sqlalchemy.orm import selectinload
 
-from app.dependencies import DbSession, Pagination, BookFilters
+from app.dependencies import DbSession, Pagination, BookFilters, RequireAPIKey
 from app.models import Book, Author, Genre
 from app.schemas import (
     BookCreate,
@@ -350,13 +350,14 @@ def get_book(
     response_model=BookResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new book",
-    description="Create a new book with optional author and genre associations.",
+    description="Create a new book with optional author and genre associations. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def create_book(
     request: Request,
     book_data: BookCreate,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> BookResponse:
     """
     Create a new book.
@@ -433,7 +434,7 @@ def create_book(
     "/{book_id}",
     response_model=BookResponse,
     summary="Update a book",
-    description="Update an existing book's information and associations.",
+    description="Update an existing book's information and associations. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def update_book(
@@ -441,6 +442,7 @@ def update_book(
     book_id: int,
     book_data: BookUpdate,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> BookResponse:
     """
     Update an existing book.
@@ -517,13 +519,14 @@ def update_book(
     "/{book_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a book",
-    description="Permanently delete a book from the database.",
+    description="Permanently delete a book from the database. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def delete_book(
     request: Request,
     book_id: int,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> None:
     """
     Delete a book.

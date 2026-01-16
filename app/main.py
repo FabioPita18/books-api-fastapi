@@ -40,7 +40,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
-from app.routers import books_router, authors_router, genres_router
+from app.routers import books_router, authors_router, genres_router, api_keys_router
 from app.services.cache import get_redis_client, close_redis_connection, get_cache_stats
 from app.services.rate_limiter import limiter, rate_limit_exceeded_handler
 
@@ -234,6 +234,7 @@ Rate limiting will be implemented to ensure fair usage.
     app.include_router(books_router, prefix=api_prefix)
     app.include_router(authors_router, prefix=api_prefix)
     app.include_router(genres_router, prefix=api_prefix)
+    app.include_router(api_keys_router, prefix=api_prefix)
 
     # -------------------------------------------------------------------------
     # Health Check Endpoint
@@ -264,6 +265,10 @@ Rate limiting will be implemented to ensure fair usage.
             "rate_limiting": {
                 "enabled": settings.rate_limit_enabled,
                 "default_limit": settings.rate_limit_default,
+            },
+            "authentication": {
+                "enabled": settings.api_key_enabled,
+                "header": settings.api_key_header,
             },
         }
 

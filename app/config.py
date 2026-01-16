@@ -156,6 +156,14 @@ class Settings(BaseSettings):
         default="X-API-Key",
         description="Header name for API key authentication"
     )
+    admin_api_key: str = Field(
+        default="",
+        description="Admin API key for full access (set in .env)"
+    )
+    api_key_enabled: bool = Field(
+        default=True,
+        description="Enable API key authentication for write operations"
+    )
     allowed_origins: str = Field(
         default="http://localhost:3000,http://localhost:8080",
         description="Comma-separated list of allowed CORS origins"

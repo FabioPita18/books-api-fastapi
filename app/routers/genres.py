@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
 from app.config import get_settings
-from app.dependencies import DbSession, Pagination
+from app.dependencies import DbSession, Pagination, RequireAPIKey
 from app.models import Genre, Book
 from app.schemas import (
     GenreCreate,
@@ -143,13 +143,14 @@ def get_genre_books(
     response_model=GenreResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new genre",
-    description="Create a new genre in the system.",
+    description="Create a new genre in the system. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def create_genre(
     request: Request,
     genre_data: GenreCreate,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> GenreResponse:
     """
     Create a new genre.
@@ -183,7 +184,7 @@ def create_genre(
     "/{genre_id}",
     response_model=GenreResponse,
     summary="Update a genre",
-    description="Update an existing genre's information.",
+    description="Update an existing genre's information. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def update_genre(
@@ -191,6 +192,7 @@ def update_genre(
     genre_id: int,
     genre_data: GenreUpdate,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> GenreResponse:
     """Update an existing genre."""
     genre = get_genre_or_404(db, genre_id)
@@ -219,13 +221,14 @@ def update_genre(
     "/{genre_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a genre",
-    description="Permanently delete a genre from the database.",
+    description="Permanently delete a genre from the database. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def delete_genre(
     request: Request,
     genre_id: int,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> None:
     """Delete a genre."""
     genre = get_genre_or_404(db, genre_id)

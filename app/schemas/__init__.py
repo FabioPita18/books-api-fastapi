@@ -38,6 +38,11 @@ from app.schemas.book import (
     BookResponse,
     BookListResponse,
 )
+from app.schemas.api_key import (
+    APIKeyCreate,
+    APIKeyCreatedResponse,
+    APIKeyResponse,
+)
 
 __all__ = [
     # Author schemas
@@ -56,4 +61,8 @@ __all__ = [
     "BookUpdate",
     "BookResponse",
     "BookListResponse",
+    # API Key schemas
+    "APIKeyCreate",
+    "APIKeyCreatedResponse",
+    "APIKeyResponse",
 ]

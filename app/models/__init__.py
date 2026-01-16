@@ -21,6 +21,7 @@ Import all models here to:
 from app.models.author import Author
 from app.models.genre import Genre
 from app.models.book import Book, book_authors, book_genres
+from app.models.api_key import APIKey
 
 # Export all models
 __all__ = [
@@ -29,4 +30,5 @@ __all__ = [
     "Book",
     "book_authors",
     "book_genres",
+    "APIKey",
 ]

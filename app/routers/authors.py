@@ -13,7 +13,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
-from app.dependencies import DbSession, Pagination
+from app.dependencies import DbSession, Pagination, RequireAPIKey
 from app.models import Author, Book
 from app.schemas import (
     AuthorCreate,
@@ -143,13 +143,14 @@ def get_author_books(
     response_model=AuthorResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new author",
-    description="Create a new author in the system.",
+    description="Create a new author in the system. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def create_author(
     request: Request,
     author_data: AuthorCreate,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> AuthorResponse:
     """Create a new author."""
     author = Author(
@@ -171,7 +172,7 @@ def create_author(
     "/{author_id}",
     response_model=AuthorResponse,
     summary="Update an author",
-    description="Update an existing author's information.",
+    description="Update an existing author's information. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def update_author(
@@ -179,6 +180,7 @@ def update_author(
     author_id: int,
     author_data: AuthorUpdate,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> AuthorResponse:
     """Update an existing author."""
     author = get_author_or_404(db, author_id)
@@ -200,13 +202,14 @@ def update_author(
     "/{author_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an author",
-    description="Permanently delete an author from the database.",
+    description="Permanently delete an author from the database. Requires API key.",
 )
 @limiter.limit(settings.rate_limit_write)
 def delete_author(
     request: Request,
     author_id: int,
     db: DbSession,
+    _: RequireAPIKey,
 ) -> None:
     """Delete an author."""
     author = get_author_or_404(db, author_id)
