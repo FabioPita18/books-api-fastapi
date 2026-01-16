@@ -16,6 +16,7 @@ A modern, well-documented RESTful API built with FastAPI for managing a collecti
 ## 🎯 Problem Statement
 
 Developers and applications need a reliable, performant API to access book data with:
+
 - Fast response times for frequently accessed data
 - Protection against abuse through rate limiting
 - Clear, interactive documentation
@@ -25,6 +26,7 @@ Developers and applications need a reliable, performant API to access book data 
 ## ✨ Solution
 
 A FastAPI-based API providing:
+
 - **Fast Performance**: Async operations with Redis caching for popular queries
 - **Rate Limiting**: Tiered access (100 req/hour free, 1000 req/hour with API key)
 - **Auto Documentation**: Interactive Swagger UI and ReDoc
@@ -49,6 +51,7 @@ A FastAPI-based API providing:
 ## 🚀 Key Features
 
 ### Current (MVP)
+
 - [x] Complete CRUD operations for books, authors, and genres
 - [x] Advanced search and filtering
 - [x] Redis caching for popular queries
@@ -61,6 +64,7 @@ A FastAPI-based API providing:
 - [x] Database migrations with Alembic
 
 ### Future Enhancements
+
 - [ ] OAuth2 authentication
 - [ ] Book recommendations algorithm
 - [ ] Review and rating system
@@ -71,6 +75,7 @@ A FastAPI-based API providing:
 ## 📡 API Endpoints
 
 ### Books
+
 ```
 GET    /api/v1/books/             # List all books (paginated, filterable)
 GET    /api/v1/books/{id}         # Get book details
@@ -81,6 +86,7 @@ DELETE /api/v1/books/{id}         # Delete book (requires API key)
 ```
 
 ### Authors
+
 ```
 GET    /api/v1/authors/           # List all authors
 GET    /api/v1/authors/{id}       # Get author details
@@ -91,6 +97,7 @@ DELETE /api/v1/authors/{id}       # Delete author (requires API key)
 ```
 
 ### Genres
+
 ```
 GET    /api/v1/genres/            # List all genres
 GET    /api/v1/genres/{id}        # Get genre details
@@ -101,6 +108,7 @@ DELETE /api/v1/genres/{id}        # Delete genre (requires API key)
 ```
 
 ### API Keys (Admin)
+
 ```
 GET    /api/v1/api-keys/          # List all API keys (requires API key)
 POST   /api/v1/api-keys/          # Create new API key (requires API key)
@@ -108,6 +116,7 @@ DELETE /api/v1/api-keys/{id}      # Revoke API key (requires API key)
 ```
 
 ### Documentation
+
 ```
 GET    /docs                      # Swagger UI
 GET    /redoc                     # ReDoc documentation
@@ -121,11 +130,13 @@ GET    /openapi.json              # OpenAPI schema
 ### Example Requests
 
 **Get a book (no auth required):**
+
 ```bash
 curl -X GET "http://localhost:8001/api/v1/books/1"
 ```
 
 **Create a book (API key required):**
+
 ```bash
 curl -X POST "http://localhost:8001/api/v1/books/" \
   -H "Content-Type: application/json" \
@@ -134,11 +145,13 @@ curl -X POST "http://localhost:8001/api/v1/books/" \
 ```
 
 **Search books with filters:**
+
 ```bash
 curl -X GET "http://localhost:8001/api/v1/books/search?author=orwell&min_year=1940"
 ```
 
 ### Example Response
+
 ```json
 {
   "id": 1,
@@ -169,11 +182,13 @@ curl -X GET "http://localhost:8001/api/v1/books/search?author=orwell&min_year=19
 ## 💻 Local Development
 
 ### Prerequisites
+
 - Python 3.11+
 - Docker & Docker Compose (recommended)
 - Or: PostgreSQL 16+ and Redis 7+ (for local setup without Docker)
 
 ### Quick Start
+
 ```bash
 # Clone repository
 git clone https://github.com/yourusername/books-api-fastapi.git
@@ -204,6 +219,7 @@ API will be available at `http://localhost:8001`
 Documentation at `http://localhost:8001/docs`
 
 ### Docker Setup (Recommended)
+
 ```bash
 # Start all services
 docker-compose up --build
@@ -219,6 +235,7 @@ docker-compose logs -f api
 ```
 
 ## 🧪 Running Tests
+
 ```bash
 # Run all tests
 pytest
@@ -236,6 +253,7 @@ pytest -v
 View coverage report at `htmlcov/index.html`
 
 ## 🔐 Environment Variables
+
 ```bash
 # .env.example
 # Application
@@ -264,11 +282,13 @@ API_KEY_HEADER=X-API-Key
 ### Railway (Recommended)
 
 1. **Create Railway project**
+
 ```bash
    railway init
 ```
 
 2. **Add PostgreSQL and Redis**
+
 ```bash
    railway add postgresql
    railway add redis
@@ -277,11 +297,13 @@ API_KEY_HEADER=X-API-Key
 3. **Set environment variables** in Railway dashboard
 
 4. **Deploy**
+
 ```bash
    railway up
 ```
 
 ### Docker Deployment
+
 ```bash
 # Build image
 docker build -t books-api:latest .
@@ -294,6 +316,7 @@ docker run -p 8000:8000 \
 ```
 
 ## 📁 Project Structure
+
 ```
 books-api-fastapi/
 ├── app/
@@ -343,11 +366,11 @@ books-api-fastapi/
 
 ### Rate Limiting Tiers
 
-| Endpoint Type | Rate Limit | Notes |
-|---------------|------------|-------|
-| Default (GET) | 100/minute | IP-based |
-| Search | 60/minute | IP-based |
-| Write (POST/PUT/DELETE) | 30/minute | Requires API key |
+| Endpoint Type           | Rate Limit | Notes            |
+| ----------------------- | ---------- | ---------------- |
+| Default (GET)           | 100/minute | IP-based         |
+| Search                  | 60/minute  | IP-based         |
+| Write (POST/PUT/DELETE) | 30/minute  | Requires API key |
 
 ### Caching Strategy
 
@@ -372,10 +395,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👤 Author
 
-**Fabio [Your Last Name]**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Portfolio: [fabio-portfolio.vercel.app](https://fabio-portfolio.vercel.app)
+**Fabio Pita**
+
+- GitHub: [@FabioPita18](https://github.com/FabioPita18)
+- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/fabio-pita-455b83212/)
 
 ## 🙏 Acknowledgments
 
