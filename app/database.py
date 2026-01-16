@@ -30,10 +30,10 @@ We use the "session per request" pattern:
 This is implemented using FastAPI's dependency injection.
 """
 
-from typing import Generator
+from collections.abc import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import get_settings
 

@@ -32,7 +32,6 @@ PHASE 1 vs PHASE 2:
 """
 
 from functools import lru_cache
-from typing import List, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -195,7 +194,7 @@ class Settings(BaseSettings):
     # Computed Properties
     # -------------------------------------------------------------------------
     @property
-    def allowed_origins_list(self) -> List[str]:
+    def allowed_origins_list(self) -> list[str]:
         """
         Parse comma-separated CORS origins into a list.
 

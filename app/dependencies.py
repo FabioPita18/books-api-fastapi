@@ -19,7 +19,7 @@ Common Dependency Patterns:
 - Caching
 """
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -251,9 +251,9 @@ BookFilters = Annotated[BookSearchParams, Depends()]
 # API Key Authentication
 # =============================================================================
 def get_api_key(
-    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    x_api_key: str | None = Header(None, alias="X-API-Key"),
     db: Session = Depends(get_db),
-) -> Optional[str]:
+) -> str | None:
     """
     Extract and validate API key from request header.
 
@@ -298,9 +298,9 @@ def get_api_key(
 
 
 def get_optional_api_key(
-    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    x_api_key: str | None = Header(None, alias="X-API-Key"),
     db: Session = Depends(get_db),
-) -> Optional[str]:
+) -> str | None:
     """
     Extract API key from request header (optional).
 
@@ -325,4 +325,4 @@ def get_optional_api_key(
 
 # Type aliases for cleaner route signatures
 RequireAPIKey = Annotated[str, Depends(get_api_key)]
-OptionalAPIKey = Annotated[Optional[str], Depends(get_optional_api_key)]
+OptionalAPIKey = Annotated[str | None, Depends(get_optional_api_key)]
