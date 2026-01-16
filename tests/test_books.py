@@ -18,7 +18,6 @@ Each test should:
 - Be descriptive (name explains what's tested)
 """
 
-from decimal import Decimal
 
 import pytest
 from fastapi import status

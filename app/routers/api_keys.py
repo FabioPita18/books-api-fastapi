@@ -9,9 +9,9 @@ Security Notes:
 - Keys are stored as hashes (never plain text)
 """
 
-from typing import List
 
 from fastapi import APIRouter, HTTPException, Request, status
+from sqlalchemy import select
 
 from app.config import get_settings
 from app.dependencies import DbSession, RequireAPIKey
@@ -19,7 +19,6 @@ from app.models import APIKey
 from app.schemas import APIKeyCreate, APIKeyCreatedResponse, APIKeyResponse
 from app.services.auth import create_api_key, revoke_api_key
 from app.services.rate_limiter import limiter
-from sqlalchemy import select
 
 settings = get_settings()
 
@@ -72,7 +71,7 @@ def create_new_api_key(
 
 @router.get(
     "/",
-    response_model=List[APIKeyResponse],
+    response_model=list[APIKeyResponse],
     summary="List all API keys",
     description="List all API keys. Requires authentication. "
                 "Does not return the actual keys, only prefixes.",
@@ -82,7 +81,7 @@ def list_api_keys(
     request: Request,
     db: DbSession,
     _: RequireAPIKey,  # Requires authentication
-) -> List[APIKeyResponse]:
+) -> list[APIKeyResponse]:
     """
     List all API keys.
 

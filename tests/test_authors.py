@@ -4,7 +4,6 @@ Tests for Authors API Endpoints
 Tests for /api/v1/authors endpoints.
 """
 
-import pytest
 from fastapi import status
 
 

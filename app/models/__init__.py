@@ -18,10 +18,10 @@ Import all models here to:
 
 # Import all models so Alembic can discover them
 # The order matters for SQLAlchemy to resolve relationships
-from app.models.author import Author
-from app.models.genre import Genre
-from app.models.book import Book, book_authors, book_genres
 from app.models.api_key import APIKey
+from app.models.author import Author
+from app.models.book import Book, book_authors, book_genres
+from app.models.genre import Genre
 
 # Export all models
 __all__ = [

@@ -9,7 +9,6 @@ Security Note:
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,14 +28,14 @@ class APIKeyCreate(BaseModel):
         examples=["Production App", "Mobile Client", "Testing"],
     )
 
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         max_length=1000,
         description="Optional description of the key's purpose",
         examples=["Key for the production web application"],
     )
 
-    expires_at: Optional[datetime] = Field(
+    expires_at: datetime | None = Field(
         default=None,
         description="Optional expiration date (null = never expires)",
         examples=["2025-12-31T23:59:59Z"],
@@ -90,16 +89,16 @@ class APIKeyResponse(BaseModel):
         ...,
         description="Key prefix for identification (first 12 chars)",
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         None,
         description="Key description",
     )
     is_active: bool = Field(..., description="Whether the key is active")
-    expires_at: Optional[datetime] = Field(
+    expires_at: datetime | None = Field(
         None,
         description="Expiration date (null = never)",
     )
-    last_used_at: Optional[datetime] = Field(
+    last_used_at: datetime | None = Field(
         None,
         description="When the key was last used",
     )

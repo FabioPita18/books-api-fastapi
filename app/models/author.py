@@ -11,9 +11,9 @@ SQLAlchemy 2.0 Features Used:
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text, DateTime, func
+from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -71,7 +71,7 @@ class Author(Base):
 
     # Text is for unlimited length strings (like biography)
     # Optional[str] + nullable=True means this field can be None/NULL
-    bio: Mapped[Optional[str]] = mapped_column(
+    bio: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Author biography"
@@ -115,7 +115,7 @@ class Author(Base):
     # With this relationship, you can do:
     #   author.books  # Get all books by this author
     #   author.books.append(book)  # Add a book to this author
-    books: Mapped[List["Book"]] = relationship(
+    books: Mapped[list["Book"]] = relationship(
         "Book",
         secondary="book_authors",
         back_populates="authors",

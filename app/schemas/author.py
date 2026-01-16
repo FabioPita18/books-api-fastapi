@@ -12,7 +12,6 @@ Pydantic v2 Features Used:
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -38,7 +37,7 @@ class AuthorBase(BaseModel):
         examples=["George Orwell", "Jane Austen"],
     )
 
-    bio: Optional[str] = Field(
+    bio: str | None = Field(
         default=None,
         max_length=5000,
         description="Author biography",
@@ -96,14 +95,14 @@ class AuthorUpdate(BaseModel):
     we want all fields to be optional.
     """
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         min_length=1,
         max_length=255,
         description="Author's full name",
     )
 
-    bio: Optional[str] = Field(
+    bio: str | None = Field(
         default=None,
         max_length=5000,
         description="Author biography",
@@ -111,7 +110,7 @@ class AuthorUpdate(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def name_must_not_be_empty(cls, v: Optional[str]) -> Optional[str]:
+    def name_must_not_be_empty(cls, v: str | None) -> str | None:
         """Validate name if provided."""
         if v is not None and not v.strip():
             raise ValueError("Name cannot be empty or whitespace")

@@ -14,28 +14,27 @@ This is the most comprehensive router, demonstrating:
 """
 
 import math
-from typing import List
 
 from fastapi import APIRouter, HTTPException, Request, status
-from sqlalchemy import select, func, or_, extract
+from sqlalchemy import extract, func, or_, select
 from sqlalchemy.orm import selectinload
 
-from app.dependencies import DbSession, Pagination, BookFilters, RequireAPIKey
-from app.models import Book, Author, Genre
+from app.config import get_settings
+from app.dependencies import BookFilters, DbSession, Pagination, RequireAPIKey
+from app.models import Author, Book, Genre
 from app.schemas import (
     BookCreate,
-    BookUpdate,
-    BookResponse,
     BookListResponse,
+    BookResponse,
+    BookUpdate,
 )
 from app.services.cache import (
     cache_get,
     cache_set,
-    make_cache_key,
     invalidate_book_cache,
+    make_cache_key,
 )
 from app.services.rate_limiter import limiter
-from app.config import get_settings
 
 settings = get_settings()
 

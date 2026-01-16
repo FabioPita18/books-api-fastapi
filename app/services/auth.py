@@ -12,10 +12,9 @@ Security Features:
 """
 
 import hashlib
-import secrets
 import logging
-from datetime import datetime, timezone
-from typing import Optional, Tuple
+import secrets
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,7 +29,7 @@ settings = get_settings()
 KEY_PREFIX = "bk_"
 
 
-def generate_api_key() -> Tuple[str, str, str]:
+def generate_api_key() -> tuple[str, str, str]:
     """
     Generate a new API key.
 
@@ -73,7 +72,7 @@ def hash_api_key(key: str) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
 
 
-def validate_api_key(db: Session, key: str) -> Optional[APIKey]:
+def validate_api_key(db: Session, key: str) -> APIKey | None:
     """
     Validate an API key and return the associated record.
 
@@ -100,7 +99,7 @@ def validate_api_key(db: Session, key: str) -> Optional[APIKey]:
     # Look up in database
     stmt = select(APIKey).where(
         APIKey.key_hash == key_hash,
-        APIKey.is_active == True,
+        APIKey.is_active,
     )
     api_key = db.execute(stmt).scalar_one_or_none()
 
@@ -108,12 +107,12 @@ def validate_api_key(db: Session, key: str) -> Optional[APIKey]:
         return None
 
     # Check expiration
-    if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
+    if api_key.expires_at and api_key.expires_at < datetime.now(UTC):
         logger.warning(f"Expired API key used: {api_key.key_prefix}...")
         return None
 
     # Update last used timestamp
-    api_key.last_used_at = datetime.now(timezone.utc)
+    api_key.last_used_at = datetime.now(UTC)
     db.commit()
 
     return api_key
@@ -142,9 +141,9 @@ def _create_admin_key_record() -> APIKey:
 def create_api_key(
     db: Session,
     name: str,
-    description: Optional[str] = None,
-    expires_at: Optional[datetime] = None,
-) -> Tuple[str, APIKey]:
+    description: str | None = None,
+    expires_at: datetime | None = None,
+) -> tuple[str, APIKey]:
     """
     Create a new API key in the database.
 
@@ -181,7 +180,7 @@ def create_api_key(
     return plain_key, api_key
 
 
-def revoke_api_key(db: Session, key_id: int) -> Optional[APIKey]:
+def revoke_api_key(db: Session, key_id: int) -> APIKey | None:
     """
     Revoke an API key by ID.
 

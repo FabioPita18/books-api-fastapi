@@ -19,20 +19,20 @@ SQLAlchemy can create these as Table objects (not full models) when
 you don't need to store extra data on the relationship.
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
-    DateTime,
+    Column,
     Date,
+    DateTime,
+    ForeignKey,
     Integer,
     Numeric,
-    ForeignKey,
+    String,
     Table,
-    Column,
+    Text,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -146,7 +146,7 @@ class Book(Base):
     # ISBN is the international standard identifier for books
     # It should be unique - no two books have the same ISBN
     # Optional because older books might not have one
-    isbn: Mapped[Optional[str]] = mapped_column(
+    isbn: Mapped[str | None] = mapped_column(
         String(20),
         unique=True,
         index=True,
@@ -154,21 +154,21 @@ class Book(Base):
         comment="International Standard Book Number"
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Book description or summary"
     )
 
     # Date (not DateTime) because we only care about the day, not time
-    publication_date: Mapped[Optional[date]] = mapped_column(
+    publication_date: Mapped[date | None] = mapped_column(
         Date,
         index=True,
         nullable=True,
         comment="Date of publication"
     )
 
-    page_count: Mapped[Optional[int]] = mapped_column(
+    page_count: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="Number of pages in the book"
@@ -177,7 +177,7 @@ class Book(Base):
     # Numeric(10, 2) = up to 10 digits, 2 after decimal point
     # This is standard for currency: 99999999.99 maximum
     # Using Decimal (not float) for precise money calculations
-    price: Mapped[Optional[Decimal]] = mapped_column(
+    price: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2),
         nullable=True,
         comment="Book price in USD"
@@ -206,14 +206,14 @@ class Book(Base):
     # back_populates creates a bidirectional relationship:
     #   book.authors  -> list of authors
     #   author.books  -> list of books
-    authors: Mapped[List["Author"]] = relationship(
+    authors: Mapped[list["Author"]] = relationship(
         "Author",
         secondary=book_authors,
         back_populates="books",
     )
 
     # Many-to-many relationship with Genre
-    genres: Mapped[List["Genre"]] = relationship(
+    genres: Mapped[list["Genre"]] = relationship(
         "Genre",
         secondary=book_genres,
         back_populates="books",

@@ -6,22 +6,21 @@ Follows the same patterns as the books router.
 """
 
 import math
-from typing import List
 
 from fastapi import APIRouter, HTTPException, Request, status
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.dependencies import DbSession, Pagination, RequireAPIKey
-from app.models import Genre, Book
+from app.models import Book, Genre
 from app.schemas import (
-    GenreCreate,
-    GenreUpdate,
-    GenreResponse,
-    BookResponse,
     BookListResponse,
+    BookResponse,
+    GenreCreate,
+    GenreResponse,
+    GenreUpdate,
 )
 from app.services.cache import invalidate_genre_cache
 from app.services.rate_limiter import limiter
@@ -56,12 +55,12 @@ def get_genre_or_404(db: DbSession, genre_id: int) -> Genre:
 
 @router.get(
     "/",
-    response_model=List[GenreResponse],
+    response_model=list[GenreResponse],
     summary="List all genres",
     description="Get a list of all genres in the system.",
 )
 @limiter.limit(settings.rate_limit_default)
-def list_genres(request: Request, db: DbSession) -> List[GenreResponse]:
+def list_genres(request: Request, db: DbSession) -> list[GenreResponse]:
     """List all genres."""
     stmt = select(Genre).order_by(Genre.name)
     genres = db.execute(stmt).scalars().all()
@@ -172,7 +171,7 @@ def create_genre(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Genre with name '{genre_data.name}' already exists",
-        )
+        ) from None
 
     # Invalidate related caches
     invalidate_genre_cache()
@@ -209,7 +208,7 @@ def update_genre(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Genre with name '{genre_data.name}' already exists",
-        )
+        ) from None
 
     # Invalidate related caches
     invalidate_genre_cache(genre_id)

@@ -11,9 +11,8 @@ Security Features:
 """
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import String, Text, DateTime, Boolean, func
+from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -78,7 +77,7 @@ class APIKey(Base):
         comment="Whether the key is currently active"
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Optional description of the key's purpose"
@@ -87,7 +86,7 @@ class APIKey(Base):
     # -------------------------------------------------------------------------
     # Expiration
     # -------------------------------------------------------------------------
-    expires_at: Mapped[Optional[datetime]] = mapped_column(
+    expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="When the key expires (null = never)"
@@ -96,7 +95,7 @@ class APIKey(Base):
     # -------------------------------------------------------------------------
     # Audit Fields
     # -------------------------------------------------------------------------
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(
+    last_used_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="When the key was last used"

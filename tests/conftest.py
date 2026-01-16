@@ -28,9 +28,9 @@ For database tests, we use:
 - function scope for sessions (isolation between tests)
 """
 
+from collections.abc import Generator
 from datetime import date
 from decimal import Decimal
-from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -41,7 +41,6 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
 from app.models import Author, Book, Genre
-
 
 # =============================================================================
 # DATABASE FIXTURES

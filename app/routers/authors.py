@@ -6,10 +6,9 @@ Follows the same patterns as the books router.
 """
 
 import math
-from typing import List
 
 from fastapi import APIRouter, HTTPException, Request, status
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
@@ -17,10 +16,10 @@ from app.dependencies import DbSession, Pagination, RequireAPIKey
 from app.models import Author, Book
 from app.schemas import (
     AuthorCreate,
-    AuthorUpdate,
     AuthorResponse,
-    BookResponse,
+    AuthorUpdate,
     BookListResponse,
+    BookResponse,
 )
 from app.services.cache import invalidate_author_cache
 from app.services.rate_limiter import limiter
@@ -55,12 +54,12 @@ def get_author_or_404(db: DbSession, author_id: int) -> Author:
 
 @router.get(
     "/",
-    response_model=List[AuthorResponse],
+    response_model=list[AuthorResponse],
     summary="List all authors",
     description="Get a list of all authors in the system.",
 )
 @limiter.limit(settings.rate_limit_default)
-def list_authors(request: Request, db: DbSession) -> List[AuthorResponse]:
+def list_authors(request: Request, db: DbSession) -> list[AuthorResponse]:
     """List all authors."""
     stmt = select(Author).order_by(Author.name)
     authors = db.execute(stmt).scalars().all()

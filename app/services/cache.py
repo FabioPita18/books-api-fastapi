@@ -19,8 +19,7 @@ Cache Strategy:
 
 import json
 import logging
-from typing import Any, Optional
-from functools import wraps
+from typing import Any
 
 import redis
 from redis.exceptions import RedisError
@@ -33,10 +32,10 @@ logger = logging.getLogger(__name__)
 # Redis Connection
 # =============================================================================
 
-_redis_client: Optional[redis.Redis] = None
+_redis_client: redis.Redis | None = None
 
 
-def get_redis_client() -> Optional[redis.Redis]:
+def get_redis_client() -> redis.Redis | None:
     """
     Get or create a Redis client connection.
 
@@ -120,7 +119,7 @@ def make_cache_key(prefix: str, *args, **kwargs) -> str:
 # Core Cache Operations
 # =============================================================================
 
-def cache_get(key: str) -> Optional[Any]:
+def cache_get(key: str) -> Any | None:
     """
     Get a value from the cache.
 
@@ -149,7 +148,7 @@ def cache_get(key: str) -> Optional[Any]:
         return None
 
 
-def cache_set(key: str, value: Any, ttl: Optional[int] = None) -> bool:
+def cache_set(key: str, value: Any, ttl: int | None = None) -> bool:
     """
     Set a value in the cache with optional TTL.
 
@@ -240,7 +239,7 @@ def cache_delete_pattern(pattern: str) -> int:
 # Cache Invalidation Helpers
 # =============================================================================
 
-def invalidate_book_cache(book_id: Optional[int] = None) -> None:
+def invalidate_book_cache(book_id: int | None = None) -> None:
     """
     Invalidate book-related caches.
 
@@ -259,7 +258,7 @@ def invalidate_book_cache(book_id: Optional[int] = None) -> None:
     cache_delete_pattern("genre:*:books:*")
 
 
-def invalidate_author_cache(author_id: Optional[int] = None) -> None:
+def invalidate_author_cache(author_id: int | None = None) -> None:
     """
     Invalidate author-related caches.
 
@@ -279,7 +278,7 @@ def invalidate_author_cache(author_id: Optional[int] = None) -> None:
     cache_delete_pattern("search:*")
 
 
-def invalidate_genre_cache(genre_id: Optional[int] = None) -> None:
+def invalidate_genre_cache(genre_id: int | None = None) -> None:
     """
     Invalidate genre-related caches.
 

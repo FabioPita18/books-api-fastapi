@@ -20,13 +20,11 @@ Rate Limit Tiers:
 """
 
 import logging
-from typing import Optional
 
 from fastapi import Request
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from starlette.responses import JSONResponse
 
 from app.config import get_settings

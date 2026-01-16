@@ -8,10 +8,9 @@ The most complex schemas, handling:
 - Pagination for list responses
 """
 
+import re
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
-import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -37,27 +36,27 @@ class BookBase(BaseModel):
         examples=["1984", "Pride and Prejudice"],
     )
 
-    isbn: Optional[str] = Field(
+    isbn: str | None = Field(
         default=None,
         max_length=20,
         description="ISBN-10 or ISBN-13",
         examples=["978-0451524935", "0-06-112008-1"],
     )
 
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         max_length=5000,
         description="Book description or summary",
         examples=["A dystopian novel set in a totalitarian society..."],
     )
 
-    publication_date: Optional[date] = Field(
+    publication_date: date | None = Field(
         default=None,
         description="Date of publication",
         examples=["1949-06-08"],
     )
 
-    page_count: Optional[int] = Field(
+    page_count: int | None = Field(
         default=None,
         gt=0,  # gt = greater than
         le=50000,  # le = less than or equal (reasonable max)
@@ -65,7 +64,7 @@ class BookBase(BaseModel):
         examples=[328, 256],
     )
 
-    price: Optional[Decimal] = Field(
+    price: Decimal | None = Field(
         default=None,
         ge=0,  # ge = greater than or equal (free books allowed)
         le=Decimal("9999.99"),
@@ -75,7 +74,7 @@ class BookBase(BaseModel):
 
     @field_validator("isbn")
     @classmethod
-    def validate_isbn(cls, v: Optional[str]) -> Optional[str]:
+    def validate_isbn(cls, v: str | None) -> str | None:
         """
         Validate ISBN format.
 
@@ -137,13 +136,13 @@ class BookCreate(BookBase):
     }
     """
 
-    author_ids: Optional[List[int]] = Field(
+    author_ids: list[int] | None = Field(
         default=None,
         description="List of author IDs to associate with this book",
         examples=[[1, 2]],
     )
 
-    genre_ids: Optional[List[int]] = Field(
+    genre_ids: list[int] | None = Field(
         default=None,
         description="List of genre IDs to associate with this book",
         examples=[[1, 3]],
@@ -157,57 +156,57 @@ class BookUpdate(BaseModel):
     All fields are optional for PATCH-style updates.
     """
 
-    title: Optional[str] = Field(
+    title: str | None = Field(
         default=None,
         min_length=1,
         max_length=500,
         description="Book title",
     )
 
-    isbn: Optional[str] = Field(
+    isbn: str | None = Field(
         default=None,
         max_length=20,
         description="ISBN-10 or ISBN-13",
     )
 
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         max_length=5000,
         description="Book description",
     )
 
-    publication_date: Optional[date] = Field(
+    publication_date: date | None = Field(
         default=None,
         description="Date of publication",
     )
 
-    page_count: Optional[int] = Field(
+    page_count: int | None = Field(
         default=None,
         gt=0,
         le=50000,
         description="Number of pages",
     )
 
-    price: Optional[Decimal] = Field(
+    price: Decimal | None = Field(
         default=None,
         ge=0,
         le=Decimal("9999.99"),
         description="Book price in USD",
     )
 
-    author_ids: Optional[List[int]] = Field(
+    author_ids: list[int] | None = Field(
         default=None,
         description="List of author IDs (replaces existing)",
     )
 
-    genre_ids: Optional[List[int]] = Field(
+    genre_ids: list[int] | None = Field(
         default=None,
         description="List of genre IDs (replaces existing)",
     )
 
     @field_validator("isbn")
     @classmethod
-    def validate_isbn(cls, v: Optional[str]) -> Optional[str]:
+    def validate_isbn(cls, v: str | None) -> str | None:
         """Validate ISBN if provided."""
         if v is None:
             return v
@@ -227,7 +226,7 @@ class BookUpdate(BaseModel):
 
     @field_validator("title")
     @classmethod
-    def title_must_not_be_empty(cls, v: Optional[str]) -> Optional[str]:
+    def title_must_not_be_empty(cls, v: str | None) -> str | None:
         """Validate title if provided."""
         if v is not None and not v.strip():
             raise ValueError("Title cannot be empty or whitespace")
@@ -251,12 +250,12 @@ class BookResponse(BookBase):
     updated_at: datetime = Field(..., description="When the book was last updated")
 
     # Nested relationships - returns full objects, not just IDs
-    authors: List[AuthorResponse] = Field(
+    authors: list[AuthorResponse] = Field(
         default=[],
         description="List of authors",
     )
 
-    genres: List[GenreResponse] = Field(
+    genres: list[GenreResponse] = Field(
         default=[],
         description="List of genres",
     )
@@ -314,7 +313,7 @@ class BookListResponse(BaseModel):
     - pages: Total number of pages
     """
 
-    items: List[BookResponse] = Field(
+    items: list[BookResponse] = Field(
         ...,
         description="List of books for this page",
     )

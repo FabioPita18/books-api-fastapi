@@ -28,20 +28,19 @@ Key Concepts:
 """
 
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
-from app.routers import books_router, authors_router, genres_router, api_keys_router
-from app.services.cache import get_redis_client, close_redis_connection, get_cache_stats
+from app.routers import api_keys_router, authors_router, books_router, genres_router
+from app.services.cache import close_redis_connection, get_cache_stats, get_redis_client
 from app.services.rate_limiter import limiter, rate_limit_exceeded_handler
 
 # =============================================================================

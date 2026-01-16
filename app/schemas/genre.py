@@ -6,7 +6,6 @@ Follows the same pattern as Author schemas.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -22,7 +21,7 @@ class GenreBase(BaseModel):
         examples=["Science Fiction", "Mystery", "Romance"],
     )
 
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         max_length=1000,
         description="Description of the genre",
@@ -46,14 +45,14 @@ class GenreCreate(GenreBase):
 class GenreUpdate(BaseModel):
     """Schema for updating an existing genre. All fields optional."""
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None,
         min_length=1,
         max_length=100,
         description="Genre name",
     )
 
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         max_length=1000,
         description="Description of the genre",
@@ -61,7 +60,7 @@ class GenreUpdate(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def name_must_not_be_empty(cls, v: Optional[str]) -> Optional[str]:
+    def name_must_not_be_empty(cls, v: str | None) -> str | None:
         """Validate name if provided."""
         if v is not None and not v.strip():
             raise ValueError("Genre name cannot be empty or whitespace")

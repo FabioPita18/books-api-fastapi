@@ -4,7 +4,6 @@ Tests for Genres API Endpoints
 Tests for /api/v1/genres endpoints.
 """
 
-import pytest
 from fastapi import status
 
 

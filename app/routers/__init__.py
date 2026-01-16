@@ -19,10 +19,10 @@ Router Structure:
 Each router is imported and registered in main.py.
 """
 
-from app.routers.books import router as books_router
-from app.routers.authors import router as authors_router
-from app.routers.genres import router as genres_router
 from app.routers.api_keys import router as api_keys_router
+from app.routers.authors import router as authors_router
+from app.routers.books import router as books_router
+from app.routers.genres import router as genres_router
 
 __all__ = [
     "books_router",

@@ -8,9 +8,9 @@ A book can belong to multiple genres (e.g., "Science Fiction" and "Dystopian").
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text, DateTime, func
+from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -60,7 +60,7 @@ class Genre(Base):
     )
 
     # Optional description of the genre
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Description of what this genre encompasses"
@@ -86,7 +86,7 @@ class Genre(Base):
     # Relationships
     # -------------------------------------------------------------------------
     # Many-to-many relationship with Book through book_genres table
-    books: Mapped[List["Book"]] = relationship(
+    books: Mapped[list["Book"]] = relationship(
         "Book",
         secondary="book_genres",
         back_populates="genres",
