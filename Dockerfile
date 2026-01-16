@@ -106,11 +106,9 @@ EXPOSE 8000
 # --start-period: Initial delay before starting checks (10s)
 # --retries: How many failures before marking unhealthy (3)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/health')" || exit 1
+    CMD python -c "import httpx; httpx.get('http://localhost:${PORT:-8000}/health')" || exit 1
 
 # Default command
-# uvicorn: ASGI server
-# app.main:app: The FastAPI application
-# --host 0.0.0.0: Listen on all interfaces
-# --port 8000: Port to listen on
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Uses PORT environment variable (set by Railway/cloud platforms) with fallback to 8000
+# Runs database migrations before starting the server
+CMD sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
