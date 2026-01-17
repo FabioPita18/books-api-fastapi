@@ -28,6 +28,16 @@ For database tests, we use:
 - function scope for sessions (isolation between tests)
 """
 
+# =============================================================================
+# TEST ENVIRONMENT SETUP
+# =============================================================================
+# IMPORTANT: Set environment variables BEFORE importing the app
+# This disables rate limiting and sets a test secret key
+import os
+
+os.environ["RATE_LIMIT_ENABLED"] = "false"
+os.environ["SECRET_KEY"] = "test-secret-key-for-unit-tests-at-least-32-characters-long"
+
 from collections.abc import Generator
 from datetime import date
 from decimal import Decimal

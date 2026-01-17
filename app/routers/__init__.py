@@ -15,11 +15,13 @@ Router Structure:
 - authors.py: /api/v1/authors/* endpoints
 - genres.py: /api/v1/genres/* endpoints
 - api_keys.py: /api/v1/api-keys/* endpoints
+- auth.py: /api/v1/auth/* endpoints (registration, login, OAuth)
 
 Each router is imported and registered in main.py.
 """
 
 from app.routers.api_keys import router as api_keys_router
+from app.routers.auth import router as auth_router
 from app.routers.authors import router as authors_router
 from app.routers.books import router as books_router
 from app.routers.genres import router as genres_router
@@ -29,4 +31,5 @@ __all__ = [
     "authors_router",
     "genres_router",
     "api_keys_router",
+    "auth_router",
 ]

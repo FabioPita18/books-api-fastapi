@@ -18,6 +18,7 @@ slowapi==0.1.9
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.1.2  # Pin to 4.x for passlib compatibility (5.x has breaking changes)
 python-dotenv==1.0.0
 
 # Data Validation

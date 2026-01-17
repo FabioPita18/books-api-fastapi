@@ -43,6 +43,14 @@ from app.schemas.genre import (
     GenreResponse,
     GenreUpdate,
 )
+from app.schemas.user import (
+    PasswordChange,
+    UserCreate,
+    UserInDB,
+    UserPublicResponse,
+    UserResponse,
+    UserUpdate,
+)
 
 __all__ = [
     # Author schemas
@@ -65,4 +73,11 @@ __all__ = [
     "APIKeyCreate",
     "APIKeyCreatedResponse",
     "APIKeyResponse",
+    # User schemas
+    "UserCreate",
+    "UserUpdate",
+    "UserResponse",
+    "UserPublicResponse",
+    "UserInDB",
+    "PasswordChange",
 ]
