@@ -39,7 +39,13 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
-from app.routers import api_keys_router, auth_router, authors_router, books_router, genres_router
+from app.routers import (
+    api_keys_router,
+    auth_router,
+    authors_router,
+    books_router,
+    genres_router,
+)
 from app.services.cache import close_redis_connection, get_cache_stats, get_redis_client
 from app.services.rate_limiter import limiter, rate_limit_exceeded_handler
 
