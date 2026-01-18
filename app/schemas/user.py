@@ -271,3 +271,67 @@ class PasswordChange(BaseModel):
         if not re.search(r"\d", v):
             raise ValueError("Password must contain at least one number")
         return v
+
+
+# -------------------------------------------------------------------------
+# Authentication Token Schemas
+# -------------------------------------------------------------------------
+
+
+class LoginRequest(BaseModel):
+    """Schema for login request."""
+
+    email: EmailStr = Field(
+        ...,
+        description="User's email address",
+        examples=["john@example.com"],
+    )
+
+    password: str = Field(
+        ...,
+        min_length=1,
+        description="User's password",
+    )
+
+
+class TokenResponse(BaseModel):
+    """
+    Schema for token response after login.
+
+    Contains access token and token type.
+    Refresh token is sent via httpOnly cookie for security.
+    """
+
+    access_token: str = Field(
+        ...,
+        description="JWT access token for API authentication",
+    )
+
+    token_type: str = Field(
+        default="bearer",
+        description="Token type (always 'bearer')",
+    )
+
+    expires_in: int = Field(
+        ...,
+        description="Access token expiration time in seconds",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "expires_in": 900,
+            }
+        }
+    )
+
+
+class RefreshTokenRequest(BaseModel):
+    """Schema for refresh token request (when not using cookies)."""
+
+    refresh_token: str = Field(
+        ...,
+        description="Refresh token to exchange for new access token",
+    )

@@ -19,13 +19,18 @@ Common Dependency Patterns:
 - Caching
 """
 
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, Header, HTTPException, Query, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 settings = get_settings()
 
@@ -326,3 +331,177 @@ def get_optional_api_key(
 # Type aliases for cleaner route signatures
 RequireAPIKey = Annotated[str, Depends(get_api_key)]
 OptionalAPIKey = Annotated[str | None, Depends(get_optional_api_key)]
+
+
+# =============================================================================
+# JWT Authentication (User Authentication)
+# =============================================================================
+# OAuth2PasswordBearer is FastAPI's built-in scheme for Bearer token auth.
+# It automatically:
+# - Extracts the token from the "Authorization: Bearer <token>" header
+# - Returns 401 if the header is missing (when used as a dependency)
+# - Adds the "Authorize" button to Swagger UI
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/login",  # URL for Swagger UI's login form
+    auto_error=True,  # Raise 401 if token missing
+)
+
+# Optional version that doesn't raise error if token is missing
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/login",
+    auto_error=False,
+)
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+):
+    """
+    Extract and validate the current user from JWT token.
+
+    This dependency:
+    1. Extracts the Bearer token from Authorization header
+    2. Decodes and validates the JWT
+    3. Looks up the user in the database
+    4. Returns the user object
+
+    Args:
+        token: JWT access token from Authorization header
+        db: Database session
+
+    Returns:
+        User object for the authenticated user
+
+    Raises:
+        HTTPException: 401 if token is invalid or user not found
+    """
+    from app.models.user import User
+    from app.services.security import verify_token_type
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    # Verify and decode the token
+    payload = verify_token_type(token, "access")
+    if payload is None:
+        raise credentials_exception
+
+    # Extract user identifier from token
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        raise credentials_exception
+
+    # Look up user in database
+    stmt = select(User).where(User.id == int(user_id))
+    user = db.execute(stmt).scalar_one_or_none()
+
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+def get_current_active_user(
+    current_user=Depends(get_current_user),
+):
+    """
+    Verify the current user is active.
+
+    Use this dependency for endpoints that require an active user account.
+    Inactive users (disabled, suspended) will receive a 403 error.
+
+    Args:
+        current_user: User from get_current_user dependency
+
+    Returns:
+        User object if active
+
+    Raises:
+        HTTPException: 403 if user is inactive
+    """
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is inactive",
+        )
+    return current_user
+
+
+def get_current_superuser(
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Verify the current user has superuser (admin) privileges.
+
+    Use this dependency for admin-only endpoints like:
+    - User management
+    - System configuration
+    - Moderation actions
+
+    Args:
+        current_user: Active user from get_current_active_user
+
+    Returns:
+        User object if superuser
+
+    Raises:
+        HTTPException: 403 if user is not a superuser
+    """
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Superuser privileges required",
+        )
+    return current_user
+
+
+def get_optional_current_user(
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+):
+    """
+    Get current user if authenticated, None otherwise.
+
+    Use this for endpoints that work for both authenticated and
+    anonymous users, but may provide extra features for logged-in users.
+
+    Example: A book endpoint that shows "Add to favorites" button
+    only for authenticated users.
+
+    Args:
+        token: Optional JWT token
+        db: Database session
+
+    Returns:
+        User object if authenticated, None otherwise
+    """
+    if not token:
+        return None
+
+    from app.models.user import User
+    from app.services.security import verify_token_type
+
+    payload = verify_token_type(token, "access")
+    if payload is None:
+        return None
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        return None
+
+    stmt = select(User).where(User.id == int(user_id))
+    user = db.execute(stmt).scalar_one_or_none()
+
+    return user
+
+
+# Type aliases for cleaner route signatures
+CurrentUser = Annotated["User", Depends(get_current_user)]
+ActiveUser = Annotated["User", Depends(get_current_active_user)]
+SuperUser = Annotated["User", Depends(get_current_superuser)]
+OptionalUser = Annotated["User | None", Depends(get_optional_current_user)]

@@ -145,11 +145,27 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
+    # JWT Settings
+    # -------------------------------------------------------------------------
+    jwt_algorithm: str = Field(
+        default="HS256",
+        description="JWT signing algorithm"
+    )
+    access_token_expire_minutes: int = Field(
+        default=15,
+        description="Access token expiration time in minutes"
+    )
+    refresh_token_expire_days: int = Field(
+        default=7,
+        description="Refresh token expiration time in days"
+    )
+
+    # -------------------------------------------------------------------------
     # Security Settings
     # -------------------------------------------------------------------------
     secret_key: str = Field(
         default="REPLACE_WITH_YOUR_GENERATED_SECRET_KEY",
-        description="Secret key for cryptographic operations"
+        description="Secret key for cryptographic operations (used for JWT signing)"
     )
     api_key_header: str = Field(
         default="X-API-Key",

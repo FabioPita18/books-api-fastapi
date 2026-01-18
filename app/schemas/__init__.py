@@ -44,7 +44,10 @@ from app.schemas.genre import (
     GenreUpdate,
 )
 from app.schemas.user import (
+    LoginRequest,
     PasswordChange,
+    RefreshTokenRequest,
+    TokenResponse,
     UserCreate,
     UserInDB,
     UserPublicResponse,
@@ -80,4 +83,8 @@ __all__ = [
     "UserPublicResponse",
     "UserInDB",
     "PasswordChange",
+    # Auth/Token schemas
+    "LoginRequest",
+    "TokenResponse",
+    "RefreshTokenRequest",
 ]
