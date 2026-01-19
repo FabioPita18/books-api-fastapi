@@ -15,7 +15,6 @@ import os
 os.environ["RATE_LIMIT_ENABLED"] = "false"
 os.environ["SECRET_KEY"] = "test-secret-key-for-unit-tests-at-least-32-characters-long"
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
