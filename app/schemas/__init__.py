@@ -43,6 +43,14 @@ from app.schemas.genre import (
     GenreResponse,
     GenreUpdate,
 )
+from app.schemas.review import (
+    BookRatingStats,
+    ReviewCreate,
+    ReviewListResponse,
+    ReviewResponse,
+    ReviewResponseSimple,
+    ReviewUpdate,
+)
 from app.schemas.user import (
     LoginRequest,
     PasswordChange,
@@ -53,14 +61,6 @@ from app.schemas.user import (
     UserPublicResponse,
     UserResponse,
     UserUpdate,
-)
-from app.schemas.review import (
-    BookRatingStats,
-    ReviewCreate,
-    ReviewListResponse,
-    ReviewResponse,
-    ReviewResponseSimple,
-    ReviewUpdate,
 )
 
 __all__ = [

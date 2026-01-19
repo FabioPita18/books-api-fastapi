@@ -33,6 +33,7 @@ For database tests, we use:
 # =============================================================================
 # IMPORTANT: Set environment variables BEFORE importing the app
 # This disables rate limiting and sets a test secret key
+# ruff: noqa: I001, E402
 import os
 
 os.environ["RATE_LIMIT_ENABLED"] = "false"
@@ -51,8 +52,8 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
 from app.models import Author, Book, Genre
-from app.models.user import User
 from app.models.review import Review
+from app.models.user import User
 from app.services.security import hash_password
 
 # =============================================================================

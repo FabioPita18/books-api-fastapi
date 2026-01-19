@@ -15,7 +15,6 @@ Business Rules:
 - One review per user per book (enforced at database level)
 - Users can only edit/delete their own reviews
 """
-
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator

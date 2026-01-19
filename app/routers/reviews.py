@@ -285,6 +285,63 @@ def get_book_rating_stats(
 
 
 # =============================================================================
+# Reported Reviews (must come before /reviews/{review_id} for route matching)
+# =============================================================================
+
+
+@router.get(
+    "/reviews/reported",
+    response_model=ReviewListResponse,
+    summary="List reported reviews",
+    description="Get all reported reviews for moderation. Superuser only.",
+)
+@limiter.limit(settings.rate_limit_default)
+def list_reported_reviews(
+    request: Request,
+    db: DbSession,
+    pagination: Pagination,
+    current_user: SuperUser,
+) -> ReviewListResponse:
+    """
+    List all reported reviews (for moderation).
+
+    Only accessible by superusers.
+
+    Args:
+        pagination: Pagination parameters
+        current_user: Authenticated superuser
+
+    Returns:
+        Paginated list of reported reviews
+    """
+    # Count total reported reviews
+    count_stmt = select(func.count()).where(Review.reported == True)  # noqa: E712
+    total = db.execute(count_stmt).scalar() or 0
+
+    # Calculate pages
+    pages = math.ceil(total / pagination.per_page) if total > 0 else 0
+
+    # Fetch reported reviews
+    stmt = (
+        select(Review)
+        .options(selectinload(Review.user), selectinload(Review.book))
+        .where(Review.reported == True)  # noqa: E712
+        .offset(pagination.skip)
+        .limit(pagination.per_page)
+        .order_by(Review.created_at.desc())
+    )
+    reviews = db.execute(stmt).scalars().all()
+
+    return ReviewListResponse(
+        items=[ReviewResponse.model_validate(r) for r in reviews],
+        total=total,
+        page=pagination.page,
+        per_page=pagination.per_page,
+        pages=pages,
+    )
+
+
+# =============================================================================
 # Individual Review Endpoints
 # =============================================================================
 
@@ -464,60 +521,8 @@ def list_user_reviews(
 
 
 # =============================================================================
-# Moderation Endpoints (Superuser only)
+# Report/Unreport Review Endpoints
 # =============================================================================
-
-
-@router.get(
-    "/reviews/reported",
-    response_model=ReviewListResponse,
-    summary="List reported reviews",
-    description="Get all reported reviews for moderation. Superuser only.",
-)
-@limiter.limit(settings.rate_limit_default)
-def list_reported_reviews(
-    request: Request,
-    db: DbSession,
-    pagination: Pagination,
-    current_user: SuperUser,
-) -> ReviewListResponse:
-    """
-    List all reported reviews (for moderation).
-
-    Only accessible by superusers.
-
-    Args:
-        pagination: Pagination parameters
-        current_user: Authenticated superuser
-
-    Returns:
-        Paginated list of reported reviews
-    """
-    # Count total reported reviews
-    count_stmt = select(func.count()).where(Review.reported == True)  # noqa: E712
-    total = db.execute(count_stmt).scalar() or 0
-
-    # Calculate pages
-    pages = math.ceil(total / pagination.per_page) if total > 0 else 0
-
-    # Fetch reported reviews
-    stmt = (
-        select(Review)
-        .options(selectinload(Review.user), selectinload(Review.book))
-        .where(Review.reported == True)  # noqa: E712
-        .offset(pagination.skip)
-        .limit(pagination.per_page)
-        .order_by(Review.created_at.desc())
-    )
-    reviews = db.execute(stmt).scalars().all()
-
-    return ReviewListResponse(
-        items=[ReviewResponse.model_validate(r) for r in reviews],
-        total=total,
-        page=pagination.page,
-        per_page=pagination.per_page,
-        pages=pages,
-    )
 
 
 @router.post(
