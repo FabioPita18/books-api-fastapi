@@ -242,6 +242,64 @@ def search_books(
 
 
 @router.get(
+    "/top-rated",
+    response_model=BookListResponse,
+    summary="Get top rated books",
+    description="Get books sorted by average rating (highest first). Only includes books with reviews.",
+)
+@limiter.limit(settings.rate_limit_default)
+def get_top_rated_books(
+    request: Request,
+    db: DbSession,
+    pagination: Pagination,
+    min_reviews: int = 1,
+) -> BookListResponse:
+    """
+    Get books sorted by average rating.
+
+    Only includes books that have at least `min_reviews` reviews.
+    Sorted by average_rating descending (highest rated first).
+
+    Args:
+        min_reviews: Minimum number of reviews required (default: 1)
+        pagination: Pagination parameters
+
+    Returns:
+        Paginated list of top-rated books
+    """
+    # Build base query for books with enough reviews
+    base_stmt = select(Book).where(
+        Book.review_count >= min_reviews,
+        Book.average_rating.isnot(None),
+    )
+
+    # Count total matching books
+    count_stmt = select(func.count()).select_from(base_stmt.subquery())
+    total = db.execute(count_stmt).scalar() or 0
+
+    # Calculate total pages
+    pages = math.ceil(total / pagination.per_page) if total > 0 else 0
+
+    # Fetch books for current page with relationships, sorted by rating
+    stmt = (
+        base_stmt
+        .options(selectinload(Book.authors), selectinload(Book.genres))
+        .offset(pagination.skip)
+        .limit(pagination.per_page)
+        .order_by(Book.average_rating.desc(), Book.review_count.desc())
+    )
+    books = db.execute(stmt).scalars().all()
+
+    return BookListResponse(
+        items=[BookResponse.model_validate(book) for book in books],
+        total=total,
+        page=pagination.page,
+        per_page=pagination.per_page,
+        pages=pages,
+    )
+
+
+@router.get(
     "/",
     response_model=BookListResponse,
     summary="List all books",

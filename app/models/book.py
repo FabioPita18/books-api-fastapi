@@ -185,6 +185,27 @@ class Book(Base):
     )
 
     # -------------------------------------------------------------------------
+    # Rating Aggregation Fields (cached for performance)
+    # -------------------------------------------------------------------------
+    # These are denormalized fields updated when reviews change.
+    # Avoids expensive COUNT/AVG queries on every book list request.
+    average_rating: Mapped[Decimal | None] = mapped_column(
+        Numeric(3, 2),
+        nullable=True,
+        default=None,
+        index=True,
+        comment="Average review rating (1.00-5.00), null if no reviews"
+    )
+
+    review_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        index=True,
+        comment="Number of reviews for this book"
+    )
+
+    # -------------------------------------------------------------------------
     # Timestamps
     # -------------------------------------------------------------------------
     created_at: Mapped[datetime] = mapped_column(

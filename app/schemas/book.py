@@ -249,6 +249,16 @@ class BookResponse(BookBase):
     created_at: datetime = Field(..., description="When the book was created")
     updated_at: datetime = Field(..., description="When the book was last updated")
 
+    # Rating aggregation fields
+    average_rating: Decimal | None = Field(
+        default=None,
+        description="Average review rating (1.00-5.00), null if no reviews",
+    )
+    review_count: int = Field(
+        default=0,
+        description="Number of reviews for this book",
+    )
+
     # Nested relationships - returns full objects, not just IDs
     authors: list[AuthorResponse] = Field(
         default=[],
@@ -271,6 +281,8 @@ class BookResponse(BookBase):
                 "publication_date": "1949-06-08",
                 "page_count": 328,
                 "price": "12.99",
+                "average_rating": "4.25",
+                "review_count": 42,
                 "created_at": "2024-01-15T10:30:00Z",
                 "updated_at": "2024-01-15T10:30:00Z",
                 "authors": [

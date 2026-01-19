@@ -42,6 +42,7 @@ from app.schemas.review import (
     ReviewUpdate,
 )
 from app.services.rate_limiter import limiter
+from app.services.ratings import recalculate_book_rating
 
 settings = get_settings()
 
@@ -221,6 +222,9 @@ def create_review(
     db.add(review)
     db.commit()
     db.refresh(review)
+
+    # Update book rating aggregations
+    recalculate_book_rating(db, book_id)
 
     # Load relationships for response
     stmt = (
@@ -413,11 +417,16 @@ def update_review(
 
     # Update fields
     update_data = review_data.model_dump(exclude_unset=True)
+    rating_changed = "rating" in update_data and update_data["rating"] != review.rating
     for field, value in update_data.items():
         setattr(review, field, value)
 
     db.commit()
     db.refresh(review)
+
+    # Recalculate book ratings if rating was changed
+    if rating_changed:
+        recalculate_book_rating(db, review.book_id)
 
     return ReviewResponse.model_validate(review)
 
@@ -458,8 +467,12 @@ def delete_review(
             detail="You can only delete your own reviews",
         )
 
+    book_id = review.book_id
     db.delete(review)
     db.commit()
+
+    # Recalculate book ratings after deletion
+    recalculate_book_rating(db, book_id)
 
 
 # =============================================================================
