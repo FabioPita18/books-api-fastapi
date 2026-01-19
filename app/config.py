@@ -161,6 +161,43 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
+    # OAuth Settings (Social Login)
+    # -------------------------------------------------------------------------
+    # Google OAuth
+    google_client_id: str = Field(
+        default="",
+        description="Google OAuth client ID"
+    )
+    google_client_secret: str = Field(
+        default="",
+        description="Google OAuth client secret"
+    )
+    google_redirect_uri: str = Field(
+        default="http://localhost:8001/api/v1/auth/google/callback",
+        description="Google OAuth redirect URI"
+    )
+
+    # GitHub OAuth
+    github_client_id: str = Field(
+        default="",
+        description="GitHub OAuth client ID"
+    )
+    github_client_secret: str = Field(
+        default="",
+        description="GitHub OAuth client secret"
+    )
+    github_redirect_uri: str = Field(
+        default="http://localhost:8001/api/v1/auth/github/callback",
+        description="GitHub OAuth redirect URI"
+    )
+
+    # Frontend URL (for redirects after OAuth)
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        description="Frontend URL for OAuth redirects"
+    )
+
+    # -------------------------------------------------------------------------
     # Security Settings
     # -------------------------------------------------------------------------
     secret_key: str = Field(

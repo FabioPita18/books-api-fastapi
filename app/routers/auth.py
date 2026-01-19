@@ -396,3 +396,318 @@ def get_me(
     3. Verifies the user is active
     """
     return UserResponse.model_validate(current_user)
+
+
+# =============================================================================
+# OAuth Endpoints (Social Login)
+# =============================================================================
+
+
+@router.get(
+    "/google",
+    summary="Login with Google",
+    description="""
+    Redirect to Google OAuth login page.
+
+    After successful authentication, Google will redirect back to
+    `/api/v1/auth/google/callback` with an authorization code.
+    """,
+    responses={
+        302: {"description": "Redirect to Google OAuth"},
+        400: {"description": "Google OAuth not configured"},
+    },
+)
+async def google_login(request: Request):
+    """Redirect to Google OAuth authorization page."""
+    from starlette.responses import RedirectResponse
+
+    from app.services.oauth import get_google_auth_url, is_google_configured
+
+    if not is_google_configured():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google OAuth is not configured",
+        )
+
+    redirect_uri = settings.google_redirect_uri
+    auth_url = await get_google_auth_url(redirect_uri)
+
+    return RedirectResponse(url=auth_url)
+
+
+@router.get(
+    "/google/callback",
+    summary="Google OAuth callback",
+    description="""
+    Handle Google OAuth callback after user authorizes.
+
+    This endpoint:
+    1. Exchanges the authorization code for tokens
+    2. Fetches user info from Google
+    3. Creates or links user account
+    4. Returns JWT tokens
+    """,
+)
+async def google_callback(
+    request: Request,
+    response: Response,
+    db: DbSession,
+    code: str = None,
+    error: str = None,
+):
+    """Handle Google OAuth callback."""
+    from app.services.oauth import handle_google_callback, is_google_configured
+
+    if not is_google_configured():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google OAuth is not configured",
+        )
+
+    if error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OAuth error: {error}",
+        )
+
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code required",
+        )
+
+    try:
+        oauth_data = await handle_google_callback(code, settings.google_redirect_uri)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from None
+
+    # Find or create user
+    user = await _get_or_create_oauth_user(db, oauth_data)
+
+    # Generate tokens
+    token_data = {"sub": str(user.id)}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    # Update last login
+    user.last_login_at = datetime.now(UTC)
+    db.commit()
+
+    # Set refresh token cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.environment == "production",
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+    )
+
+    logger.info(f"Google OAuth login: {user.email}")
+
+    # For API testing, return JSON. For frontend, redirect with token.
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.access_token_expire_minutes * 60,
+    )
+
+
+@router.get(
+    "/github",
+    summary="Login with GitHub",
+    description="""
+    Redirect to GitHub OAuth login page.
+
+    After successful authentication, GitHub will redirect back to
+    `/api/v1/auth/github/callback` with an authorization code.
+    """,
+    responses={
+        302: {"description": "Redirect to GitHub OAuth"},
+        400: {"description": "GitHub OAuth not configured"},
+    },
+)
+async def github_login(request: Request):
+    """Redirect to GitHub OAuth authorization page."""
+    from starlette.responses import RedirectResponse
+
+    from app.services.oauth import get_github_auth_url, is_github_configured
+
+    if not is_github_configured():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="GitHub OAuth is not configured",
+        )
+
+    redirect_uri = settings.github_redirect_uri
+    auth_url = await get_github_auth_url(redirect_uri)
+
+    return RedirectResponse(url=auth_url)
+
+
+@router.get(
+    "/github/callback",
+    summary="GitHub OAuth callback",
+    description="""
+    Handle GitHub OAuth callback after user authorizes.
+
+    This endpoint:
+    1. Exchanges the authorization code for tokens
+    2. Fetches user info from GitHub
+    3. Creates or links user account
+    4. Returns JWT tokens
+    """,
+)
+async def github_callback(
+    request: Request,
+    response: Response,
+    db: DbSession,
+    code: str = None,
+    error: str = None,
+):
+    """Handle GitHub OAuth callback."""
+    from app.services.oauth import handle_github_callback, is_github_configured
+
+    if not is_github_configured():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="GitHub OAuth is not configured",
+        )
+
+    if error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OAuth error: {error}",
+        )
+
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code required",
+        )
+
+    try:
+        oauth_data = await handle_github_callback(code, settings.github_redirect_uri)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from None
+
+    # Find or create user
+    user = await _get_or_create_oauth_user(db, oauth_data)
+
+    # Generate tokens
+    token_data = {"sub": str(user.id)}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    # Update last login
+    user.last_login_at = datetime.now(UTC)
+    db.commit()
+
+    # Set refresh token cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.environment == "production",
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+    )
+
+    logger.info(f"GitHub OAuth login: {user.email}")
+
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.access_token_expire_minutes * 60,
+    )
+
+
+# =============================================================================
+# OAuth Helper Functions
+# =============================================================================
+
+
+async def _get_or_create_oauth_user(db, oauth_data) -> User:
+    """
+    Get existing user or create new one from OAuth data.
+
+    Account linking rules:
+    1. If provider_user_id matches existing OAuth user, return that user
+    2. If email matches existing user, link OAuth to that account
+    3. Otherwise, create new user
+
+    Args:
+        db: Database session
+        oauth_data: Normalized OAuth user data
+
+    Returns:
+        User object (existing or newly created)
+    """
+    from app.services.oauth import OAuthUserData
+
+    oauth_data: OAuthUserData = oauth_data
+
+    # Check for existing OAuth user (same provider + provider_user_id)
+    stmt = select(User).where(
+        User.auth_provider == oauth_data.provider,
+        User.provider_user_id == oauth_data.provider_user_id,
+    )
+    existing_oauth_user = db.execute(stmt).scalar_one_or_none()
+
+    if existing_oauth_user:
+        logger.info(f"Found existing OAuth user: {existing_oauth_user.email}")
+        return existing_oauth_user
+
+    # Check for existing user with same email (link accounts)
+    stmt = select(User).where(User.email == oauth_data.email)
+    existing_email_user = db.execute(stmt).scalar_one_or_none()
+
+    if existing_email_user:
+        # Link OAuth to existing account
+        logger.info(f"Linking OAuth to existing user: {existing_email_user.email}")
+        existing_email_user.auth_provider = oauth_data.provider
+        existing_email_user.provider_user_id = oauth_data.provider_user_id
+        if oauth_data.avatar_url and not existing_email_user.avatar_url:
+            existing_email_user.avatar_url = oauth_data.avatar_url
+        db.commit()
+        return existing_email_user
+
+    # Create new user
+    # Generate username from email or OAuth username
+    base_username = oauth_data.username or oauth_data.email.split("@")[0]
+    username = base_username.lower()
+
+    # Ensure username is unique
+    counter = 1
+    original_username = username
+    while True:
+        stmt = select(User).where(User.username == username)
+        if db.execute(stmt).scalar_one_or_none() is None:
+            break
+        username = f"{original_username}{counter}"
+        counter += 1
+
+    new_user = User(
+        email=oauth_data.email,
+        username=username,
+        full_name=oauth_data.full_name,
+        avatar_url=oauth_data.avatar_url,
+        auth_provider=oauth_data.provider,
+        provider_user_id=oauth_data.provider_user_id,
+        is_active=True,
+        is_verified=True,  # OAuth emails are considered verified
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    logger.info(f"Created new OAuth user: {new_user.email}")
+
+    return new_user
