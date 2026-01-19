@@ -54,6 +54,14 @@ from app.schemas.user import (
     UserResponse,
     UserUpdate,
 )
+from app.schemas.review import (
+    BookRatingStats,
+    ReviewCreate,
+    ReviewListResponse,
+    ReviewResponse,
+    ReviewResponseSimple,
+    ReviewUpdate,
+)
 
 __all__ = [
     # Author schemas
@@ -87,4 +95,11 @@ __all__ = [
     "LoginRequest",
     "TokenResponse",
     "RefreshTokenRequest",
+    # Review schemas
+    "ReviewCreate",
+    "ReviewUpdate",
+    "ReviewResponse",
+    "ReviewResponseSimple",
+    "ReviewListResponse",
+    "BookRatingStats",
 ]

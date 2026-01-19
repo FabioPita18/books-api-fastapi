@@ -14,14 +14,14 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
-# TYPE_CHECKING import - uncomment in Phase 3D when Review model is created
-# from typing import TYPE_CHECKING
-# if TYPE_CHECKING:
-#     from app.models.review import Review
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.review import Review
 
 
 class AuthProvider(str, Enum):
@@ -195,12 +195,11 @@ class User(Base):
     # -------------------------------------------------------------------------
     # Relationships
     # -------------------------------------------------------------------------
-    # User's reviews - uncomment in Phase 3D when Review model is created
-    # reviews: Mapped[list["Review"]] = relationship(
-    #     "Review",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan",
-    # )
+    reviews: Mapped[list["Review"]] = relationship(
+        "Review",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     # -------------------------------------------------------------------------
     # String Representation

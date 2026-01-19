@@ -22,6 +22,7 @@ from app.models.api_key import APIKey
 from app.models.author import Author
 from app.models.book import Book, book_authors, book_genres
 from app.models.genre import Genre
+from app.models.review import Review
 from app.models.user import AuthProvider, User
 
 # Export all models
@@ -34,4 +35,5 @@ __all__ = [
     "APIKey",
     "User",
     "AuthProvider",
+    "Review",
 ]

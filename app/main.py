@@ -45,6 +45,7 @@ from app.routers import (
     authors_router,
     books_router,
     genres_router,
+    reviews_router,
 )
 from app.services.cache import close_redis_connection, get_cache_stats, get_redis_client
 from app.services.rate_limiter import limiter, rate_limit_exceeded_handler
@@ -241,6 +242,7 @@ Rate limiting will be implemented to ensure fair usage.
     app.include_router(genres_router, prefix=api_prefix)
     app.include_router(api_keys_router, prefix=api_prefix)
     app.include_router(auth_router, prefix=api_prefix)
+    app.include_router(reviews_router, prefix=api_prefix)
 
     # -------------------------------------------------------------------------
     # Health Check Endpoint

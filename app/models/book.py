@@ -42,6 +42,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.author import Author
     from app.models.genre import Genre
+    from app.models.review import Review
 
 
 # =============================================================================
@@ -217,6 +218,13 @@ class Book(Base):
         "Genre",
         secondary=book_genres,
         back_populates="books",
+    )
+
+    # One-to-many relationship with Reviews
+    reviews: Mapped[list["Review"]] = relationship(
+        "Review",
+        back_populates="book",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

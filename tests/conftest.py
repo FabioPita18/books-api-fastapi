@@ -51,6 +51,9 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
 from app.models import Author, Book, Genre
+from app.models.user import User
+from app.models.review import Review
+from app.services.security import hash_password
 
 # =============================================================================
 # DATABASE FIXTURES
@@ -247,3 +250,75 @@ def multiple_books(
         db_session.refresh(book)
 
     return books
+
+
+@pytest.fixture
+def sample_user(db_session: Session) -> User:
+    """Create a sample user for testing."""
+    user = User(
+        email="testuser@example.com",
+        username="testuser",
+        hashed_password=hash_password("SecurePass123"),
+        full_name="Test User",
+        is_active=True,
+        is_verified=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def second_user(db_session: Session) -> User:
+    """Create a second user for testing ownership scenarios."""
+    user = User(
+        email="seconduser@example.com",
+        username="seconduser",
+        hashed_password=hash_password("SecurePass456"),
+        full_name="Second User",
+        is_active=True,
+        is_verified=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def superuser(db_session: Session) -> User:
+    """Create a superuser for testing admin scenarios."""
+    user = User(
+        email="admin@example.com",
+        username="admin",
+        hashed_password=hash_password("AdminPass123"),
+        full_name="Admin User",
+        is_active=True,
+        is_verified=True,
+        is_superuser=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def sample_review(
+    db_session: Session,
+    sample_book: Book,
+    sample_user: User,
+) -> Review:
+    """Create a sample review for testing."""
+    review = Review(
+        book_id=sample_book.id,
+        user_id=sample_user.id,
+        rating=4,
+        title="Great book!",
+        content="I really enjoyed reading this book.",
+    )
+    db_session.add(review)
+    db_session.commit()
+    db_session.refresh(review)
+    return review
