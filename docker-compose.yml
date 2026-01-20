@@ -151,6 +151,39 @@ services:
       retries: 5
       start_period: 5s
 
+  # ===========================================================================
+  # Elasticsearch Service (Full-text Search)
+  # ===========================================================================
+  # Elasticsearch enables advanced search features:
+  # - Full-text search with fuzzy matching
+  # - Faceted search (filter by genre, year, rating)
+  # - Relevance scoring
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: books-elasticsearch
+    restart: unless-stopped
+    environment:
+      # Single-node mode for development
+      - discovery.type=single-node
+      # Disable security for local development (enable in production!)
+      - xpack.security.enabled=false
+      # Memory settings (512MB min, adjust based on available RAM)
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # Reduce disk watermark for development
+      - "cluster.routing.allocation.disk.threshold_enabled=false"
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - books-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
 # =============================================================================
 # Networks
 # =============================================================================
@@ -169,3 +202,5 @@ volumes:
     name: books-postgres-data
   redis_data:
     name: books-redis-data
+  elasticsearch_data:
+    name: books-elasticsearch-data

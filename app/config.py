@@ -222,6 +222,38 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
+    # Elasticsearch Settings
+    # -------------------------------------------------------------------------
+    elasticsearch_url: str = Field(
+        default="http://localhost:9200",
+        description="Elasticsearch connection URL"
+    )
+    elasticsearch_index_prefix: str = Field(
+        default="books_api_",
+        description="Prefix for Elasticsearch index names"
+    )
+    elasticsearch_timeout: int = Field(
+        default=30,
+        description="Elasticsearch request timeout in seconds"
+    )
+    elasticsearch_enabled: bool = Field(
+        default=True,
+        description="Enable Elasticsearch for advanced search (falls back to PostgreSQL if disabled)"
+    )
+
+    # -------------------------------------------------------------------------
+    # Recommendations Settings
+    # -------------------------------------------------------------------------
+    recommendation_cache_ttl: int = Field(
+        default=3600,
+        description="Cache TTL for recommendations in seconds (1 hour)"
+    )
+    similar_books_limit: int = Field(
+        default=10,
+        description="Default number of similar books to return"
+    )
+
+    # -------------------------------------------------------------------------
     # Logging Settings
     # -------------------------------------------------------------------------
     log_level: str = Field(

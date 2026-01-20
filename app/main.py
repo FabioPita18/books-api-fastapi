@@ -49,6 +49,12 @@ from app.routers import (
     users_router,
 )
 from app.services.cache import close_redis_connection, get_cache_stats, get_redis_client
+from app.services.elasticsearch import (
+    close_elasticsearch,
+    get_document_count,
+    init_elasticsearch,
+    is_elasticsearch_healthy,
+)
 from app.services.rate_limiter import limiter, rate_limit_exceeded_handler
 
 # =============================================================================
@@ -96,10 +102,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     else:
         logger.warning("Redis unavailable - caching disabled")
 
+    # Initialize Elasticsearch
+    es_connected = await init_elasticsearch()
+    if es_connected:
+        logger.info("Elasticsearch connected - advanced search enabled")
+    else:
+        logger.warning("Elasticsearch unavailable - falling back to PostgreSQL search")
+
     yield  # Application runs here
 
     # ----- SHUTDOWN -----
     logger.info(f"Shutting down {settings.app_name}...")
+
+    # Close Elasticsearch connection
+    await close_elasticsearch()
 
     # Close Redis connection
     close_redis_connection()
@@ -269,11 +285,19 @@ Rate limiting will be implemented to ensure fair usage.
         Returns API status including cache connectivity and rate limiting.
         """
         cache_stats = get_cache_stats()
+        es_healthy = await is_elasticsearch_healthy()
+        es_doc_count = await get_document_count() if es_healthy else 0
+
         return {
             "status": "healthy",
             "app": settings.app_name,
             "version": settings.api_version,
             "cache": cache_stats,
+            "elasticsearch": {
+                "enabled": settings.elasticsearch_enabled,
+                "healthy": es_healthy,
+                "document_count": es_doc_count,
+            },
             "rate_limiting": {
                 "enabled": settings.rate_limit_enabled,
                 "default_limit": settings.rate_limit_default,

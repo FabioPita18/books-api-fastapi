@@ -18,9 +18,11 @@ Business Rules:
 - Only the review author or superusers can delete a review
 """
 
+import asyncio
+import logging
 import math
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -41,8 +43,11 @@ from app.schemas.review import (
     ReviewResponse,
     ReviewUpdate,
 )
+from app.services.elasticsearch import update_book_in_index
 from app.services.rate_limiter import limiter
 from app.services.ratings import recalculate_book_rating
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 

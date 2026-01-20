@@ -11,11 +11,14 @@ This is the most comprehensive router, demonstrating:
 - Request/response validation
 - OpenAPI documentation
 - Rate limiting
+- Elasticsearch indexing
 """
 
+import asyncio
+import logging
 import math
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from sqlalchemy import extract, func, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -34,7 +37,14 @@ from app.services.cache import (
     invalidate_book_cache,
     make_cache_key,
 )
+from app.services.elasticsearch import (
+    delete_book_from_index,
+    index_book,
+    update_book_in_index,
+)
 from app.services.rate_limiter import limiter
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -414,6 +424,7 @@ def create_book(
     request: Request,
     book_data: BookCreate,
     db: DbSession,
+    background_tasks: BackgroundTasks,
     _: RequireAPIKey,
 ) -> BookResponse:
     """
@@ -484,6 +495,15 @@ def create_book(
     # Invalidate related caches
     invalidate_book_cache()
 
+    # Index in Elasticsearch (background task)
+    async def index_in_es():
+        try:
+            await index_book(book)
+        except Exception as e:
+            logger.error(f"Failed to index book {book.id} in Elasticsearch: {e}")
+
+    background_tasks.add_task(asyncio.run, index_in_es())
+
     return BookResponse.model_validate(book)
 
 
@@ -499,6 +519,7 @@ def update_book(
     book_id: int,
     book_data: BookUpdate,
     db: DbSession,
+    background_tasks: BackgroundTasks,
     _: RequireAPIKey,
 ) -> BookResponse:
     """
@@ -569,6 +590,15 @@ def update_book(
     # Invalidate related caches
     invalidate_book_cache(book_id)
 
+    # Update in Elasticsearch (background task)
+    async def update_in_es():
+        try:
+            await update_book_in_index(book)
+        except Exception as e:
+            logger.error(f"Failed to update book {book.id} in Elasticsearch: {e}")
+
+    background_tasks.add_task(asyncio.run, update_in_es())
+
     return BookResponse.model_validate(book)
 
 
@@ -583,6 +613,7 @@ def delete_book(
     request: Request,
     book_id: int,
     db: DbSession,
+    background_tasks: BackgroundTasks,
     _: RequireAPIKey,
 ) -> None:
     """
@@ -605,3 +636,12 @@ def delete_book(
 
     # Invalidate related caches
     invalidate_book_cache(book_id)
+
+    # Remove from Elasticsearch (background task)
+    async def delete_from_es():
+        try:
+            await delete_book_from_index(book_id)
+        except Exception as e:
+            logger.error(f"Failed to delete book {book_id} from Elasticsearch: {e}")
+
+    background_tasks.add_task(asyncio.run, delete_from_es())
