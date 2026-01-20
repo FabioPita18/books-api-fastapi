@@ -14,17 +14,59 @@ Types defined here:
 - Connection types for pagination
 """
 
-from app.graphql.types.author import AuthorType
-from app.graphql.types.book import BookConnection, BookType
-from app.graphql.types.genre import GenreType
-from app.graphql.types.review import ReviewType
-from app.graphql.types.user import UserType
+from app.graphql.types.author import AuthorConnection, AuthorInput, AuthorType
+from app.graphql.types.book import (
+    BookConnection,
+    BookInput,
+    BookType,
+    BookUpdateInput,
+    SearchFacet,
+    SearchFiltersInput,
+    SearchResultItem,
+    SearchResults,
+)
+from app.graphql.types.genre import GenreConnection, GenreInput, GenreType
+from app.graphql.types.review import (
+    ReviewConnection,
+    ReviewInput,
+    ReviewType,
+    ReviewUpdateInput,
+)
+from app.graphql.types.user import (
+    AuthPayload,
+    LoginInput,
+    RegisterInput,
+    UserPublicType,
+    UserType,
+)
 
 __all__ = [
+    # Book types
     "BookType",
     "BookConnection",
+    "BookInput",
+    "BookUpdateInput",
+    "SearchFiltersInput",
+    "SearchResultItem",
+    "SearchFacet",
+    "SearchResults",
+    # Author types
     "AuthorType",
+    "AuthorConnection",
+    "AuthorInput",
+    # Genre types
     "GenreType",
+    "GenreConnection",
+    "GenreInput",
+    # User types
     "UserType",
+    "UserPublicType",
+    "AuthPayload",
+    "LoginInput",
+    "RegisterInput",
+    # Review types
     "ReviewType",
+    "ReviewConnection",
+    "ReviewInput",
+    "ReviewUpdateInput",
 ]

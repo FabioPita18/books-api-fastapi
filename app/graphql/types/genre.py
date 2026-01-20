@@ -18,3 +18,28 @@ class GenreType:
     id: int
     name: str
     description: str | None = None
+
+
+@strawberry.type
+class GenreConnection:
+    """
+    Paginated list of genres.
+
+    Follows the Connection pattern for GraphQL pagination.
+    """
+
+    items: list[GenreType]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+
+
+@strawberry.input
+class GenreInput:
+    """
+    Input type for creating/updating genres.
+    """
+
+    name: str
+    description: str | None = None
