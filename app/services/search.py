@@ -158,11 +158,11 @@ def _search_books_postgres(
     # Filter by publication year range
     if min_year is not None:
         filter_conditions.append(
-            extract("year", Book.published_date) >= min_year
+            extract("year", Book.publication_date) >= min_year
         )
     if max_year is not None:
         filter_conditions.append(
-            extract("year", Book.published_date) <= max_year
+            extract("year", Book.publication_date) <= max_year
         )
 
     # Filter by rating
@@ -207,7 +207,7 @@ def _search_books_postgres(
             "isbn": book.isbn,
             "authors": [author.name for author in book.authors] if book.authors else [],
             "genres": [genre.name for genre in book.genres] if book.genres else [],
-            "publication_year": book.published_date.year if book.published_date else None,
+            "publication_year": book.publication_date.year if book.publication_date else None,
             "price": float(book.price) if book.price else None,
             "average_rating": float(book.average_rating) if book.average_rating else None,
             "review_count": book.review_count or 0,
@@ -259,12 +259,12 @@ def _build_postgres_facets(db: Session, base_filters: list) -> dict[str, list]:
         # Year facet
         year_stmt = (
             select(
-                extract("year", Book.published_date).label("year"),
+                extract("year", Book.publication_date).label("year"),
                 func.count(Book.id)
             )
-            .where(Book.published_date.isnot(None))
+            .where(Book.publication_date.isnot(None))
             .group_by("year")
-            .order_by(extract("year", Book.published_date).desc())
+            .order_by(extract("year", Book.publication_date).desc())
             .limit(20)
         )
         year_results = db.execute(year_stmt).all()
