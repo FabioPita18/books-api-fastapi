@@ -33,6 +33,9 @@ httpx==0.26.0
 # Elasticsearch (Full-text Search)
 elasticsearch[async]==8.11.0
 
+# GraphQL
+strawberry-graphql[fastapi]==0.217.0
+
 # Scientific Computing (for recommendations)
 numpy==1.26.0
 

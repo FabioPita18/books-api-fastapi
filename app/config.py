@@ -254,6 +254,18 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
+    # GraphQL Settings
+    # -------------------------------------------------------------------------
+    graphql_playground_enabled: bool = Field(
+        default=True,
+        description="Enable GraphiQL playground for development"
+    )
+    graphql_introspection_enabled: bool = Field(
+        default=True,
+        description="Enable GraphQL schema introspection"
+    )
+
+    # -------------------------------------------------------------------------
     # Logging Settings
     # -------------------------------------------------------------------------
     log_level: str = Field(

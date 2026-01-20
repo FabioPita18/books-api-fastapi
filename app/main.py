@@ -39,6 +39,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
+from app.graphql import create_graphql_router
 from app.routers import (
     api_keys_router,
     auth_router,
@@ -271,6 +272,14 @@ Rate limiting will be implemented to ensure fair usage.
     app.include_router(search_router, prefix=api_prefix)
 
     # -------------------------------------------------------------------------
+    # GraphQL Endpoint
+    # -------------------------------------------------------------------------
+    # GraphQL provides an alternative API paradigm with flexible queries.
+    # Available at /graphql with GraphiQL playground for development.
+    graphql_router = create_graphql_router()
+    app.include_router(graphql_router, prefix="/graphql", tags=["GraphQL"])
+
+    # -------------------------------------------------------------------------
     # Health Check Endpoint
     # -------------------------------------------------------------------------
     @app.get(
@@ -312,6 +321,11 @@ Rate limiting will be implemented to ensure fair usage.
                 "enabled": settings.api_key_enabled,
                 "header": settings.api_key_header,
             },
+            "graphql": {
+                "enabled": True,
+                "endpoint": "/graphql",
+                "playground_enabled": settings.graphql_playground_enabled,
+            },
         }
 
     @app.get(
@@ -326,6 +340,7 @@ Rate limiting will be implemented to ensure fair usage.
             "message": f"Welcome to {settings.app_name}",
             "version": settings.api_version,
             "docs": "/docs",
+            "graphql": "/graphql",
             "health": "/health",
         }
 
