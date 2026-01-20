@@ -51,7 +51,9 @@ from app.routers import (
     search_router,
     users_router,
 )
+from app.routers.websocket import router as websocket_router
 from app.services.cache import close_redis_connection, get_cache_stats, get_redis_client
+from app.services.websocket import get_connection_manager
 from app.services.elasticsearch import (
     close_elasticsearch,
     get_document_count,
@@ -280,6 +282,13 @@ Rate limiting will be implemented to ensure fair usage.
     app.include_router(graphql_router, prefix="/graphql", tags=["GraphQL"])
 
     # -------------------------------------------------------------------------
+    # WebSocket Endpoint
+    # -------------------------------------------------------------------------
+    # WebSocket provides real-time updates for books, reviews, and user events.
+    # Available at /ws/{channel} with channel-based subscriptions.
+    app.include_router(websocket_router)
+
+    # -------------------------------------------------------------------------
     # Health Check Endpoint
     # -------------------------------------------------------------------------
     @app.get(
@@ -302,6 +311,8 @@ Rate limiting will be implemented to ensure fair usage.
         cache_stats = get_cache_stats()
         es_healthy = await is_elasticsearch_healthy()
         es_doc_count = await get_document_count() if es_healthy else 0
+        ws_manager = get_connection_manager()
+        ws_stats = ws_manager.get_stats()
 
         return {
             "status": "healthy",
@@ -325,6 +336,12 @@ Rate limiting will be implemented to ensure fair usage.
                 "enabled": True,
                 "endpoint": "/graphql",
                 "playground_enabled": settings.graphql_playground_enabled,
+            },
+            "websocket": {
+                "enabled": True,
+                "endpoint": "/ws/{channel}",
+                "connections": ws_stats["total_connections"],
+                "channels": ws_stats["channels"],
             },
         }
 
