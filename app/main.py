@@ -45,6 +45,7 @@ from app.routers import (
     authors_router,
     books_router,
     genres_router,
+    recommendations_router,
     reviews_router,
     search_router,
     users_router,
@@ -255,6 +256,9 @@ Rate limiting will be implemented to ensure fair usage.
     # prefix="/api/v1" creates versioned URLs: /api/v1/books, /api/v1/authors
     api_prefix = f"/api/{settings.api_version}"
 
+    # Recommendations router must come before books router
+    # so that /books/trending and /books/new-releases match before /books/{book_id}
+    app.include_router(recommendations_router, prefix=api_prefix)
     app.include_router(books_router, prefix=api_prefix)
     app.include_router(authors_router, prefix=api_prefix)
     app.include_router(genres_router, prefix=api_prefix)

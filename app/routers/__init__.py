@@ -25,6 +25,7 @@ from app.routers.auth import router as auth_router
 from app.routers.authors import router as authors_router
 from app.routers.books import router as books_router
 from app.routers.genres import router as genres_router
+from app.routers.recommendations import router as recommendations_router
 from app.routers.reviews import router as reviews_router
 from app.routers.search import router as search_router
 from app.routers.users import router as users_router
@@ -35,6 +36,7 @@ __all__ = [
     "genres_router",
     "api_keys_router",
     "auth_router",
+    "recommendations_router",
     "reviews_router",
     "search_router",
     "users_router",
