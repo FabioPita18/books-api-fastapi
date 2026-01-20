@@ -47,6 +47,7 @@ from app.services.elasticsearch import (
     index_book,
     update_book_in_index,
 )
+from app.services.events import EventType, publish_book_event_async
 from app.services.rate_limiter import limiter
 
 logger = logging.getLogger(__name__)
@@ -475,6 +476,21 @@ def create_book(
 
     background_tasks.add_task(index_in_es)
 
+    # Publish event for WebSocket clients (background task)
+    async def publish_event():
+        await publish_book_event_async(
+            EventType.BOOK_CREATED,
+            book.id,
+            {
+                "title": book.title,
+                "isbn": book.isbn,
+                "authors": [{"id": a.id, "name": a.name} for a in book.authors],
+                "genres": [{"id": g.id, "name": g.name} for g in book.genres],
+            },
+        )
+
+    background_tasks.add_task(publish_event)
+
     return BookResponse.model_validate(book)
 
 
@@ -570,6 +586,21 @@ def update_book(
 
     background_tasks.add_task(update_in_es)
 
+    # Publish event for WebSocket clients (background task)
+    async def publish_event():
+        await publish_book_event_async(
+            EventType.BOOK_UPDATED,
+            book.id,
+            {
+                "title": book.title,
+                "isbn": book.isbn,
+                "authors": [{"id": a.id, "name": a.name} for a in book.authors],
+                "genres": [{"id": g.id, "name": g.name} for g in book.genres],
+            },
+        )
+
+    background_tasks.add_task(publish_event)
+
     return BookResponse.model_validate(book)
 
 
@@ -602,6 +633,10 @@ def delete_book(
         HTTPException: 404 if book not found
     """
     book = get_book_or_404(db, book_id)
+
+    # Save book info before deletion for the event
+    book_title = book.title
+
     db.delete(book)
     db.commit()
 
@@ -616,3 +651,13 @@ def delete_book(
             logger.error(f"Failed to delete book {book_id} from Elasticsearch: {e}")
 
     background_tasks.add_task(delete_from_es)
+
+    # Publish event for WebSocket clients (background task)
+    async def publish_event():
+        await publish_book_event_async(
+            EventType.BOOK_DELETED,
+            book_id,
+            {"title": book_title},
+        )
+
+    background_tasks.add_task(publish_event)

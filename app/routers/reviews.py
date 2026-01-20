@@ -21,7 +21,7 @@ Business Rules:
 import logging
 import math
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -42,6 +42,7 @@ from app.schemas.review import (
     ReviewResponse,
     ReviewUpdate,
 )
+from app.services.events import EventType, publish_review_event_async
 from app.services.rate_limiter import limiter
 from app.services.ratings import recalculate_book_rating
 
@@ -156,6 +157,7 @@ def create_review(
     review_data: ReviewCreate,
     db: DbSession,
     current_user: ActiveUser,
+    background_tasks: BackgroundTasks,
 ) -> ReviewResponse:
     """
     Create a new review for a book.
@@ -173,7 +175,7 @@ def create_review(
         HTTPException: 400 if user already reviewed this book
     """
     # Verify book exists
-    get_book_or_404(db, book_id)
+    book = get_book_or_404(db, book_id)
 
     # Check if user already reviewed this book
     existing_stmt = select(Review).where(
@@ -211,6 +213,22 @@ def create_review(
         .where(Review.id == review.id)
     )
     review = db.execute(stmt).scalar_one()
+
+    # Publish event for WebSocket clients (background task)
+    async def publish_event():
+        await publish_review_event_async(
+            EventType.REVIEW_CREATED,
+            book_id,
+            review.id,
+            {
+                "rating": review.rating,
+                "title": review.title,
+                "book_title": book.title,
+                "user_name": current_user.full_name or current_user.username,
+            },
+        )
+
+    background_tasks.add_task(publish_event)
 
     return ReviewResponse.model_validate(review)
 
@@ -366,6 +384,7 @@ def update_review(
     review_data: ReviewUpdate,
     db: DbSession,
     current_user: ActiveUser,
+    background_tasks: BackgroundTasks,
 ) -> ReviewResponse:
     """
     Update an existing review.
@@ -406,6 +425,23 @@ def update_review(
     if rating_changed:
         recalculate_book_rating(db, review.book_id)
 
+    # Publish event for WebSocket clients (background task)
+    book_id = review.book_id
+    review_id_val = review.id
+
+    async def publish_event():
+        await publish_review_event_async(
+            EventType.REVIEW_UPDATED,
+            book_id,
+            review_id_val,
+            {
+                "rating": review.rating,
+                "title": review.title,
+            },
+        )
+
+    background_tasks.add_task(publish_event)
+
     return ReviewResponse.model_validate(review)
 
 
@@ -421,6 +457,7 @@ def delete_review(
     review_id: int,
     db: DbSession,
     current_user: ActiveUser,
+    background_tasks: BackgroundTasks,
 ) -> None:
     """
     Delete a review.
@@ -445,12 +482,27 @@ def delete_review(
             detail="You can only delete your own reviews",
         )
 
+    # Save info before deletion for the event
     book_id = review.book_id
+    review_id_val = review.id
+    review_title = review.title
+
     db.delete(review)
     db.commit()
 
     # Recalculate book ratings after deletion
     recalculate_book_rating(db, book_id)
+
+    # Publish event for WebSocket clients (background task)
+    async def publish_event():
+        await publish_review_event_async(
+            EventType.REVIEW_DELETED,
+            book_id,
+            review_id_val,
+            {"title": review_title},
+        )
+
+    background_tasks.add_task(publish_event)
 
 
 # =============================================================================
