@@ -1,13 +1,13 @@
 # Books API
 
-> A production-ready RESTful API for managing books, authors, and genres with Redis caching, rate limiting, and API key authentication.
+> A production-ready RESTful API for managing books, authors, and genres with user authentication, reviews, Redis caching, rate limiting, and OAuth social login.
 
 [![Live API](https://img.shields.io/badge/Live_API-Railway-blueviolet?logo=railway)](https://books-api-fastapi-production.up.railway.app/docs)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis)](https://redis.io/)
-[![Tests](https://img.shields.io/badge/tests-91%20passing-success)](https://github.com/FabioPita18/books-api-fastapi/actions)
+[![Tests](https://img.shields.io/badge/tests-192%20passing-success)](https://github.com/FabioPita18/books-api-fastapi/actions)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)](https://www.docker.com/)
 
 ## 🌐 Live Demo
@@ -25,12 +25,14 @@
 
 ## 📋 Overview
 
-A modern, well-documented RESTful API built with FastAPI for managing a collection of books, authors, and genres. Features include intelligent caching, rate limiting, API key authentication, and auto-generated interactive documentation.
+A modern, well-documented RESTful API built with FastAPI for managing a collection of books, authors, and genres. Features include user authentication (email/password + OAuth), book reviews and ratings, intelligent caching, rate limiting, and auto-generated interactive documentation.
 
 ## 🎯 Problem Statement
 
 Developers and applications need a reliable, performant API to access book data with:
 
+- User authentication and personalized features
+- Review and rating system for community engagement
 - Fast response times for frequently accessed data
 - Protection against abuse through rate limiting
 - Clear, interactive documentation
@@ -41,6 +43,8 @@ Developers and applications need a reliable, performant API to access book data 
 
 A FastAPI-based API providing:
 
+- **User System**: Email/password registration, JWT authentication, OAuth (Google, GitHub)
+- **Reviews & Ratings**: Users can review and rate books with aggregated scores
 - **Fast Performance**: Async operations with Redis caching for popular queries
 - **Rate Limiting**: Tiered access (100 req/hour free, 1000 req/hour with API key)
 - **Auto Documentation**: Interactive Swagger UI and ReDoc
@@ -51,9 +55,10 @@ A FastAPI-based API providing:
 
 - **Framework**: FastAPI 0.109.0
 - **Language**: Python 3.11+
-- **Database**: PostgreSQL 15
+- **Database**: PostgreSQL 16
 - **Caching**: Redis 7
 - **ORM**: SQLAlchemy 2.0
+- **Authentication**: JWT (PyJWT), OAuth2 (Authlib)
 - **Testing**: pytest with pytest-cov
 - **Validation**: Pydantic v2
 - **Rate Limiting**: slowapi
@@ -64,94 +69,152 @@ A FastAPI-based API providing:
 
 ## 🚀 Key Features
 
-### Current (MVP)
+### Current Features
 
 - [x] Complete CRUD operations for books, authors, and genres
 - [x] Advanced search and filtering
 - [x] Redis caching for popular queries
 - [x] Rate limiting (100 free, 1000 with API key)
-- [x] API key authentication
+- [x] API key authentication for write operations
+- [x] **User registration and authentication** (email/password)
+- [x] **JWT token management** (access + refresh tokens)
+- [x] **OAuth social login** (Google, GitHub)
+- [x] **Book reviews and ratings system**
+- [x] **Rating aggregations** (average rating, review count)
+- [x] **User profiles** with public/private views
 - [x] Auto-generated OpenAPI documentation
-- [x] 91 tests with high coverage
+- [x] 192 tests with high coverage
 - [x] Docker containerization
 - [x] CI/CD pipeline with GitHub Actions
 - [x] Database migrations with Alembic
 
 ### Future Enhancements
 
-- [ ] OAuth2 authentication
 - [ ] Book recommendations algorithm
-- [ ] Review and rating system
 - [ ] Elasticsearch for advanced search
 - [ ] GraphQL endpoint
 - [ ] WebSocket for real-time updates
 
 ## 📡 API Endpoints
 
+### Authentication
+
+```
+POST   /api/v1/auth/register        # Register new user
+POST   /api/v1/auth/login           # Login (returns JWT tokens)
+POST   /api/v1/auth/refresh         # Refresh access token
+POST   /api/v1/auth/logout          # Logout (invalidate token)
+GET    /api/v1/auth/me              # Get current user info
+GET    /api/v1/auth/google          # Google OAuth login
+GET    /api/v1/auth/google/callback # Google OAuth callback
+GET    /api/v1/auth/github          # GitHub OAuth login
+GET    /api/v1/auth/github/callback # GitHub OAuth callback
+```
+
+### Users
+
+```
+GET    /api/v1/users/me             # Get current user profile
+PUT    /api/v1/users/me             # Update profile (name, bio, avatar)
+PUT    /api/v1/users/me/password    # Change password
+GET    /api/v1/users/me/reviews     # Get current user's reviews
+GET    /api/v1/users/{id}           # Get public user profile
+```
+
 ### Books
 
 ```
-GET    /api/v1/books/             # List all books (paginated, filterable)
-GET    /api/v1/books/{id}         # Get book details
-GET    /api/v1/books/search       # Search books with filters
-POST   /api/v1/books/             # Create new book (requires API key)
-PUT    /api/v1/books/{id}         # Update book (requires API key)
-DELETE /api/v1/books/{id}         # Delete book (requires API key)
+GET    /api/v1/books/               # List all books (paginated, filterable)
+GET    /api/v1/books/{id}           # Get book details (includes avg rating)
+GET    /api/v1/books/search         # Search books with filters
+GET    /api/v1/books/top-rated      # Get top-rated books
+POST   /api/v1/books/               # Create new book (requires API key)
+PUT    /api/v1/books/{id}           # Update book (requires API key)
+DELETE /api/v1/books/{id}           # Delete book (requires API key)
+```
+
+### Reviews
+
+```
+GET    /api/v1/books/{book_id}/reviews     # List reviews for a book
+POST   /api/v1/books/{book_id}/reviews     # Create review (auth required)
+GET    /api/v1/reviews/{id}                # Get review details
+PUT    /api/v1/reviews/{id}                # Update review (owner only)
+DELETE /api/v1/reviews/{id}                # Delete review (owner/admin)
+GET    /api/v1/books/{book_id}/rating-stats # Get rating statistics
+GET    /api/v1/users/{user_id}/reviews     # Get user's reviews
+POST   /api/v1/reviews/{id}/report         # Report a review
 ```
 
 ### Authors
 
 ```
-GET    /api/v1/authors/           # List all authors
-GET    /api/v1/authors/{id}       # Get author details
-GET    /api/v1/authors/{id}/books # Get books by author (paginated)
-POST   /api/v1/authors/           # Create author (requires API key)
-PUT    /api/v1/authors/{id}       # Update author (requires API key)
-DELETE /api/v1/authors/{id}       # Delete author (requires API key)
+GET    /api/v1/authors/             # List all authors
+GET    /api/v1/authors/{id}         # Get author details
+GET    /api/v1/authors/{id}/books   # Get books by author (paginated)
+POST   /api/v1/authors/             # Create author (requires API key)
+PUT    /api/v1/authors/{id}         # Update author (requires API key)
+DELETE /api/v1/authors/{id}         # Delete author (requires API key)
 ```
 
 ### Genres
 
 ```
-GET    /api/v1/genres/            # List all genres
-GET    /api/v1/genres/{id}        # Get genre details
-GET    /api/v1/genres/{id}/books  # Get books in genre (paginated)
-POST   /api/v1/genres/            # Create genre (requires API key)
-PUT    /api/v1/genres/{id}        # Update genre (requires API key)
-DELETE /api/v1/genres/{id}        # Delete genre (requires API key)
+GET    /api/v1/genres/              # List all genres
+GET    /api/v1/genres/{id}          # Get genre details
+GET    /api/v1/genres/{id}/books    # Get books in genre (paginated)
+POST   /api/v1/genres/              # Create genre (requires API key)
+PUT    /api/v1/genres/{id}          # Update genre (requires API key)
+DELETE /api/v1/genres/{id}          # Delete genre (requires API key)
 ```
 
 ### API Keys (Admin)
 
 ```
-GET    /api/v1/api-keys/          # List all API keys (requires API key)
-POST   /api/v1/api-keys/          # Create new API key (requires API key)
-DELETE /api/v1/api-keys/{id}      # Revoke API key (requires API key)
+GET    /api/v1/api-keys/            # List all API keys (requires auth)
+POST   /api/v1/api-keys/            # Create new API key (requires auth)
+DELETE /api/v1/api-keys/{id}        # Revoke API key (requires auth)
 ```
 
 ### Documentation
 
 ```
-GET    /docs                      # Swagger UI
-GET    /redoc                     # ReDoc documentation
-GET    /openapi.json              # OpenAPI schema
+GET    /docs                        # Swagger UI
+GET    /redoc                       # ReDoc documentation
+GET    /openapi.json                # OpenAPI schema
 ```
 
 ## Example Requests
+
+**Register a new user:**
+
+```bash
+curl -X POST "http://localhost:8001/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "username": "bookworm", "password": "SecurePass123"}'
+```
+
+**Login and get JWT token:**
+
+```bash
+curl -X POST "http://localhost:8001/api/v1/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=user@example.com&password=SecurePass123"
+```
+
+**Create a review (authenticated):**
+
+```bash
+curl -X POST "http://localhost:8001/api/v1/books/1/reviews" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-jwt-token" \
+  -d '{"rating": 5, "comment": "An absolute masterpiece!"}'
+```
 
 **Get a book (no auth required):**
 
 ```bash
 curl -X GET "http://localhost:8001/api/v1/books/1"
-```
-
-**Create a book (API key required):**
-
-```bash
-curl -X POST "http://localhost:8001/api/v1/books/" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: your-api-key-here" \
-  -d '{"title": "The Pragmatic Programmer"}'
 ```
 
 **Search books with filters:**
@@ -160,7 +223,7 @@ curl -X POST "http://localhost:8001/api/v1/books/" \
 curl -X GET "http://localhost:8001/api/v1/books/search?author=orwell&min_year=1940"
 ```
 
-### Example Response
+### Example Response (Book with Rating)
 
 ```json
 {
@@ -169,6 +232,8 @@ curl -X GET "http://localhost:8001/api/v1/books/search?author=orwell&min_year=19
   "isbn": "978-0135957059",
   "published_date": "2019-09-13",
   "description": "Your journey to mastery",
+  "average_rating": 4.7,
+  "review_count": 23,
   "authors": [
     {
       "id": 1,
@@ -285,6 +350,17 @@ RATE_LIMIT_PREMIUM=1000  # requests per hour
 # Security
 SECRET_KEY=your-secret-key-here
 API_KEY_HEADER=X-API-Key
+
+# JWT Authentication
+JWT_SECRET_KEY=your-jwt-secret-key
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# OAuth (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
 ```
 
 ## 📦 Deployment
@@ -338,28 +414,42 @@ books-api-fastapi/
 │   │   ├── book.py
 │   │   ├── author.py
 │   │   ├── genre.py
+│   │   ├── user.py          # User model with OAuth support
+│   │   ├── review.py        # Review model
 │   │   └── api_key.py       # API key model
 │   ├── schemas/             # Pydantic request/response schemas
 │   │   ├── book.py
 │   │   ├── author.py
 │   │   ├── genre.py
+│   │   ├── user.py          # User schemas
+│   │   ├── review.py        # Review schemas
 │   │   └── api_key.py
 │   ├── routers/             # API route handlers
 │   │   ├── books.py
 │   │   ├── authors.py
 │   │   ├── genres.py
+│   │   ├── auth.py          # Authentication routes
+│   │   ├── users.py         # User profile routes
+│   │   ├── reviews.py       # Review routes
 │   │   └── api_keys.py      # API key management
 │   └── services/            # Business logic
 │       ├── cache.py         # Redis caching
 │       ├── rate_limiter.py  # Rate limiting with slowapi
-│       └── auth.py          # API key authentication
-├── tests/                   # pytest test suite (91 tests)
+│       ├── auth.py          # API key authentication
+│       ├── security.py      # Password hashing, JWT tokens
+│       ├── oauth.py         # OAuth providers (Google, GitHub)
+│       └── ratings.py       # Rating aggregation service
+├── tests/                   # pytest test suite (192 tests)
 │   ├── conftest.py          # Shared fixtures
 │   ├── test_books.py
 │   ├── test_authors.py
 │   ├── test_genres.py
 │   ├── test_search.py       # Search & filtering tests
-│   └── test_auth.py         # Authentication tests
+│   ├── test_auth.py         # API key authentication tests
+│   ├── test_user_auth.py    # User registration/login tests
+│   ├── test_auth_social.py  # OAuth tests
+│   ├── test_users.py        # User profile tests
+│   └── test_reviews.py      # Review CRUD tests
 ├── alembic/                 # Database migrations
 ├── scripts/
 │   └── seed_data.py         # Sample data seeder
@@ -388,6 +478,15 @@ books-api-fastapi/
 - **Search results**: 2 minutes TTL
 - **Author details**: 10 minutes TTL
 - **Genre listings**: 15 minutes TTL
+
+### Authentication
+
+| Method | Description |
+|--------|-------------|
+| Email/Password | Traditional registration with secure password hashing |
+| JWT Tokens | Access tokens (30 min) + Refresh tokens (7 days) |
+| Google OAuth | Sign in with Google account |
+| GitHub OAuth | Sign in with GitHub account |
 
 ## 🤝 Contributing
 
