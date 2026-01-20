@@ -21,10 +21,11 @@ Authentication:
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.database import get_db
 from app.models.user import User
 from app.services.security import verify_token_type
 from app.services.websocket import get_connection_manager
@@ -36,11 +37,12 @@ router = APIRouter(
 )
 
 
-def get_user_from_token(token: str | None) -> User | None:
+def get_user_from_token(db: Session, token: str | None) -> User | None:
     """
     Get user from JWT token.
 
     Args:
+        db: Database session
         token: JWT access token
 
     Returns:
@@ -58,13 +60,9 @@ def get_user_from_token(token: str | None) -> User | None:
         return None
 
     try:
-        db = SessionLocal()
-        try:
-            stmt = select(User).where(User.id == int(user_id))
-            user = db.execute(stmt).scalar_one_or_none()
-            return user
-        finally:
-            db.close()
+        stmt = select(User).where(User.id == int(user_id))
+        user = db.execute(stmt).scalar_one_or_none()
+        return user
     except Exception as e:
         logger.warning(f"Error fetching user from token: {e}")
         return None
@@ -75,6 +73,7 @@ async def websocket_endpoint(
     websocket: WebSocket,
     channel: str,
     token: str | None = Query(default=None),
+    db: Session = Depends(get_db),
 ):
     """
     WebSocket endpoint for real-time updates.
@@ -104,7 +103,7 @@ async def websocket_endpoint(
     manager = get_connection_manager()
 
     # Authenticate if token provided
-    user = get_user_from_token(token)
+    user = get_user_from_token(db, token)
     user_id = user.id if user else None
 
     # Try to connect
@@ -131,7 +130,7 @@ async def websocket_endpoint(
         # Listen for messages
         while True:
             data = await websocket.receive_json()
-            await handle_message(websocket, channel, data, user_id, manager)
+            await handle_message(websocket, channel, data, user_id, manager, db)
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected from channel '{channel}'")
@@ -147,6 +146,7 @@ async def handle_message(
     data: dict[str, Any],
     user_id: int | None,
     manager,
+    db: Session,
 ) -> None:
     """
     Handle incoming WebSocket messages.
@@ -162,7 +162,7 @@ async def handle_message(
     if message_type == "auth":
         # Handle authentication
         token = data.get("token")
-        user = get_user_from_token(token)
+        user = get_user_from_token(db, token)
 
         if user:
             await websocket.send_json({
@@ -187,7 +187,7 @@ async def handle_message(
         # Subscribe to additional channel
         new_channel = data.get("channel")
         if new_channel:
-            user = get_user_from_token(data.get("token")) if data.get("token") else None
+            user = get_user_from_token(db, data.get("token")) if data.get("token") else None
             new_user_id = user.id if user else user_id
 
             # Note: Can't call connect again (websocket already accepted)
