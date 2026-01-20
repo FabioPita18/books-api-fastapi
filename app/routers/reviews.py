@@ -31,10 +31,10 @@ from app.dependencies import (
     DbSession,
     Pagination,
     SuperUser,
+    get_book_or_404,
+    get_user_or_404,
 )
-from app.models import Book
 from app.models.review import Review
-from app.models.user import User
 from app.schemas.review import (
     BookRatingStats,
     ReviewCreate,
@@ -64,19 +64,7 @@ router = APIRouter(
 # =============================================================================
 # Helper Functions
 # =============================================================================
-
-
-def get_book_or_404(db: DbSession, book_id: int) -> Book:
-    """Get a book by ID or raise 404."""
-    stmt = select(Book).where(Book.id == book_id)
-    book = db.execute(stmt).scalar_one_or_none()
-
-    if book is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Book with id {book_id} not found",
-        )
-    return book
+# Note: get_book_or_404 and get_user_or_404 are imported from app.dependencies
 
 
 def get_review_or_404(db: DbSession, review_id: int) -> Review:
@@ -94,19 +82,6 @@ def get_review_or_404(db: DbSession, review_id: int) -> Review:
             detail=f"Review with id {review_id} not found",
         )
     return review
-
-
-def get_user_or_404(db: DbSession, user_id: int) -> User:
-    """Get a user by ID or raise 404."""
-    stmt = select(User).where(User.id == user_id)
-    user = db.execute(stmt).scalar_one_or_none()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found",
-        )
-    return user
 
 
 # =============================================================================

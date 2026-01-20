@@ -505,3 +505,70 @@ CurrentUser = Annotated["User", Depends(get_current_user)]
 ActiveUser = Annotated["User", Depends(get_current_active_user)]
 SuperUser = Annotated["User", Depends(get_current_superuser)]
 OptionalUser = Annotated["User | None", Depends(get_optional_current_user)]
+
+
+# =============================================================================
+# Common "Get or 404" Helper Functions
+# =============================================================================
+# These helpers fetch an entity by ID or raise 404 if not found.
+# Centralized here to avoid code duplication across routers.
+
+
+def get_book_or_404(db: Session, book_id: int):
+    """
+    Get a book by ID or raise 404.
+
+    Args:
+        db: Database session
+        book_id: ID of the book to fetch
+
+    Returns:
+        Book object with authors and genres loaded
+
+    Raises:
+        HTTPException: 404 if book not found
+    """
+    from sqlalchemy.orm import selectinload
+
+    from app.models import Book
+
+    stmt = (
+        select(Book)
+        .options(selectinload(Book.authors), selectinload(Book.genres))
+        .where(Book.id == book_id)
+    )
+    book = db.execute(stmt).scalar_one_or_none()
+
+    if book is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Book with id {book_id} not found",
+        )
+    return book
+
+
+def get_user_or_404(db: Session, user_id: int):
+    """
+    Get a user by ID or raise 404.
+
+    Args:
+        db: Database session
+        user_id: ID of the user to fetch
+
+    Returns:
+        User object
+
+    Raises:
+        HTTPException: 404 if user not found
+    """
+    from app.models.user import User
+
+    stmt = select(User).where(User.id == user_id)
+    user = db.execute(stmt).scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found",
+        )
+    return user

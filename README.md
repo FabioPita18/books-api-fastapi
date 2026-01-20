@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis)](https://redis.io/)
-[![Tests](https://img.shields.io/badge/tests-192%20passing-success)](https://github.com/FabioPita18/books-api-fastapi/actions)
+[![Tests](https://img.shields.io/badge/tests-250%20passing-success)](https://github.com/FabioPita18/books-api-fastapi/actions)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)](https://www.docker.com/)
 
 ## 🌐 Live Demo

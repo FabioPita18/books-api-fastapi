@@ -23,9 +23,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
-from app.dependencies import ActiveUser, DbSession, Pagination
+from app.dependencies import ActiveUser, DbSession, Pagination, get_user_or_404
 from app.models.review import Review
-from app.models.user import User
 from app.schemas.review import ReviewListResponse, ReviewResponse
 from app.schemas.user import (
     PasswordChange,
@@ -55,19 +54,7 @@ router = APIRouter(
 # =============================================================================
 # Helper Functions
 # =============================================================================
-
-
-def get_user_or_404(db: DbSession, user_id: int) -> User:
-    """Get a user by ID or raise 404."""
-    stmt = select(User).where(User.id == user_id)
-    user = db.execute(stmt).scalar_one_or_none()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found",
-        )
-    return user
+# Note: get_user_or_404 is imported from app.dependencies (shared helper)
 
 
 # =============================================================================

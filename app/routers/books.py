@@ -14,7 +14,6 @@ This is the most comprehensive router, demonstrating:
 - Elasticsearch indexing
 """
 
-import asyncio
 import logging
 import math
 
@@ -23,7 +22,13 @@ from sqlalchemy import extract, func, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
-from app.dependencies import BookFilters, DbSession, Pagination, RequireAPIKey
+from app.dependencies import (
+    BookFilters,
+    DbSession,
+    Pagination,
+    RequireAPIKey,
+    get_book_or_404,
+)
 from app.models import Author, Book, Genre
 from app.schemas import (
     BookCreate,
@@ -70,41 +75,7 @@ router = APIRouter(
 # =============================================================================
 # Helper Functions
 # =============================================================================
-def get_book_or_404(db: DbSession, book_id: int) -> Book:
-    """
-    Get a book by ID or raise 404.
-
-    This is a common pattern: check if resource exists,
-    return it or raise appropriate HTTP error.
-
-    Uses selectinload to eagerly load relationships,
-    preventing N+1 query problems.
-
-    Args:
-        db: Database session
-        book_id: ID of the book to find
-
-    Returns:
-        Book instance
-
-    Raises:
-        HTTPException: 404 if book not found
-    """
-    # SQLAlchemy 2.0 uses select() instead of query()
-    stmt = (
-        select(Book)
-        .options(selectinload(Book.authors), selectinload(Book.genres))
-        .where(Book.id == book_id)
-    )
-    book = db.execute(stmt).scalar_one_or_none()
-
-    if book is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Book with id {book_id} not found",
-        )
-
-    return book
+# Note: get_book_or_404 is imported from app.dependencies (shared helper)
 
 
 def apply_book_filters(stmt, filters: BookFilters, db: DbSession):
@@ -502,7 +473,7 @@ def create_book(
         except Exception as e:
             logger.error(f"Failed to index book {book.id} in Elasticsearch: {e}")
 
-    background_tasks.add_task(asyncio.run, index_in_es())
+    background_tasks.add_task(index_in_es)
 
     return BookResponse.model_validate(book)
 
@@ -597,7 +568,7 @@ def update_book(
         except Exception as e:
             logger.error(f"Failed to update book {book.id} in Elasticsearch: {e}")
 
-    background_tasks.add_task(asyncio.run, update_in_es())
+    background_tasks.add_task(update_in_es)
 
     return BookResponse.model_validate(book)
 
@@ -644,4 +615,4 @@ def delete_book(
         except Exception as e:
             logger.error(f"Failed to delete book {book_id} from Elasticsearch: {e}")
 
-    background_tasks.add_task(asyncio.run, delete_from_es())
+    background_tasks.add_task(delete_from_es)
