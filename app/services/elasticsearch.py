@@ -536,7 +536,7 @@ async def search_books(
         items = []
         for hit in hits:
             item = hit["_source"]
-            item["_score"] = hit["_score"]
+            item["relevance_score"] = hit["_score"]
             items.append(item)
 
         # Extract facets

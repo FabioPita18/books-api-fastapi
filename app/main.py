@@ -46,6 +46,7 @@ from app.routers import (
     books_router,
     genres_router,
     reviews_router,
+    search_router,
     users_router,
 )
 from app.services.cache import close_redis_connection, get_cache_stats, get_redis_client
@@ -263,6 +264,7 @@ Rate limiting will be implemented to ensure fair usage.
     # so that /users/me/reviews is matched before /users/{user_id}/reviews
     app.include_router(users_router, prefix=api_prefix)
     app.include_router(reviews_router, prefix=api_prefix)
+    app.include_router(search_router, prefix=api_prefix)
 
     # -------------------------------------------------------------------------
     # Health Check Endpoint
