@@ -19,9 +19,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models import Author, Book, Genre
-from app.models.review import Review
-from app.models.user import User
-from app.services.security import hash_password
 
 
 # =============================================================================

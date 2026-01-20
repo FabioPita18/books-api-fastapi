@@ -20,7 +20,8 @@ from sqlalchemy import extract, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Author, Book, Genre
-from app.services.elasticsearch import is_elasticsearch_healthy, search_books as es_search_books
+from app.services.elasticsearch import is_elasticsearch_healthy
+from app.services.elasticsearch import search_books as es_search_books
 
 logger = logging.getLogger(__name__)
 

@@ -23,7 +23,12 @@ from sqlalchemy.orm import Session, selectinload
 from app.config import get_settings
 from app.models.book import Book, book_authors, book_genres
 from app.models.review import Review
-from app.services.cache import cache_delete_pattern, cache_get, cache_set, make_cache_key
+from app.services.cache import (
+    cache_delete_pattern,
+    cache_get,
+    cache_set,
+    make_cache_key,
+)
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -123,7 +128,7 @@ def get_similar_books(
             similarity_scores[match_book_id]["score"] += author_similarity * 0.8
             if match_count > 0:
                 similarity_scores[match_book_id]["reasons"].append(
-                    f"Same author(s)"
+                    "Same author(s)"
                 )
 
     # Boost by rating (higher rated books are better recommendations)
