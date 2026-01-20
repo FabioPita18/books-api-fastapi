@@ -12,12 +12,12 @@ to all resolvers via the `info` parameter.
 
 from typing import TYPE_CHECKING
 
-from fastapi import Request
+from fastapi import Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from strawberry.fastapi import BaseContext
 
-from app.database import SessionLocal
+from app.database import get_db
 from app.services.security import verify_token_type
 
 if TYPE_CHECKING:
@@ -77,23 +77,24 @@ def get_user_from_token(db: Session, token: str | None) -> "User | None":
     return user
 
 
-async def get_context(request: Request) -> GraphQLContext:
+async def get_context(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> GraphQLContext:
     """
     Create GraphQL context for each request.
 
     This function is called by Strawberry for every GraphQL request.
     It extracts the JWT token from the Authorization header and
-    creates a database session.
+    uses the injected database session.
 
     Args:
         request: FastAPI request object
+        db: Database session from dependency injection
 
     Returns:
         GraphQLContext with db session and optional user
     """
-    # Create database session
-    db = SessionLocal()
-
     # Extract token from Authorization header
     auth_header = request.headers.get("Authorization", "")
     token = None

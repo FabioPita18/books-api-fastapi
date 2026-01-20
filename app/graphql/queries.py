@@ -58,8 +58,6 @@ def book_to_graphql(book: Book, include_reviews: bool = False) -> BookType:
                 id=a.id,
                 name=a.name,
                 bio=a.bio,
-                birth_date=a.birth_date,
-                website=a.website,
             )
             for a in (book.authors or [])
         ],
@@ -77,8 +75,6 @@ def author_to_graphql(author: Author) -> AuthorType:
         id=author.id,
         name=author.name,
         bio=author.bio,
-        birth_date=author.birth_date,
-        website=author.website,
     )
 
 
@@ -464,8 +460,6 @@ class Query:
                         id=a.get("id"),
                         name=a.get("name", ""),
                         bio=a.get("bio"),
-                        birth_date=a.get("birth_date"),
-                        website=a.get("website"),
                     )
                     for a in book_data.get("authors", [])
                 ],
@@ -529,7 +523,7 @@ class Query:
         if user:
             # Get book IDs the user has reviewed (i.e., read)
             stmt = select(Review.book_id).where(Review.user_id == user.id)
-            exclude_ids = [r for r in db.execute(stmt).scalars().all()]
+            exclude_ids = list(db.execute(stmt).scalars().all())
 
         results = get_similar_books(
             db=db,

@@ -4,8 +4,6 @@ GraphQL Author Type
 Defines the Author type for GraphQL queries.
 """
 
-from datetime import date
-
 import strawberry
 
 
@@ -20,8 +18,6 @@ class AuthorType:
     id: int
     name: str
     bio: str | None = None
-    birth_date: date | None = None
-    website: str | None = None
 
 
 @strawberry.type
@@ -47,5 +43,3 @@ class AuthorInput:
 
     name: str
     bio: str | None = None
-    birth_date: date | None = None
-    website: str | None = None

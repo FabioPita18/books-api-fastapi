@@ -53,7 +53,6 @@ from app.routers import (
 )
 from app.routers.websocket import router as websocket_router
 from app.services.cache import close_redis_connection, get_cache_stats, get_redis_client
-from app.services.websocket import get_connection_manager
 from app.services.elasticsearch import (
     close_elasticsearch,
     get_document_count,
@@ -61,6 +60,7 @@ from app.services.elasticsearch import (
     is_elasticsearch_healthy,
 )
 from app.services.rate_limiter import limiter, rate_limit_exceeded_handler
+from app.services.websocket import get_connection_manager
 
 # =============================================================================
 # Logging Configuration

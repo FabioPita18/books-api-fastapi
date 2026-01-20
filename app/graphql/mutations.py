@@ -34,7 +34,6 @@ from app.services.security import (
     verify_password,
 )
 
-
 # =============================================================================
 # Error classes for GraphQL
 # =============================================================================
@@ -359,8 +358,6 @@ class Mutation:
         author = Author(
             name=input.name,
             bio=input.bio,
-            birth_date=input.birth_date,
-            website=input.website,
         )
 
         db.add(author)
@@ -395,10 +392,6 @@ class Mutation:
             author.name = input.name
         if input.bio is not None:
             author.bio = input.bio
-        if input.birth_date is not None:
-            author.birth_date = input.birth_date
-        if input.website is not None:
-            author.website = input.website
 
         db.commit()
         db.refresh(author)
