@@ -33,7 +33,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.openapi.docs import get_redoc_html
+from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.exc import SQLAlchemyError
@@ -163,7 +164,7 @@ Rate limiting will be implemented to ensure fair usage.
         version=settings.api_version,
         # OpenAPI documentation URLs
         docs_url="/docs",  # Swagger UI
-        redoc_url="/redoc",  # ReDoc alternative
+        redoc_url=None,  # We'll add custom ReDoc with stable CDN
         openapi_url="/openapi.json",  # OpenAPI schema
         # Lifespan handler for startup/shutdown
         lifespan=lifespan,
@@ -287,6 +288,18 @@ Rate limiting will be implemented to ensure fair usage.
     # WebSocket provides real-time updates for books, reviews, and user events.
     # Available at /ws/{channel} with channel-based subscriptions.
     app.include_router(websocket_router)
+
+    # -------------------------------------------------------------------------
+    # Custom ReDoc Documentation
+    # -------------------------------------------------------------------------
+    # Use a stable ReDoc version instead of @next which can be unstable
+    @app.get("/redoc", include_in_schema=False)
+    async def redoc_html() -> HTMLResponse:
+        return get_redoc_html(
+            openapi_url="/openapi.json",
+            title="Books API - ReDoc",
+            redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@2.1.3/bundles/redoc.standalone.js",
+        )
 
     # -------------------------------------------------------------------------
     # Health Check Endpoint
