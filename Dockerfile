@@ -111,4 +111,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 # Default command
 # Uses PORT environment variable (set by Railway/cloud platforms) with fallback to 8000
 # Runs database migrations before starting the server
-CMD sh -c "echo 'Starting migrations...' && alembic upgrade head && echo 'Migrations complete. Starting uvicorn on port ${PORT:-8000}...' && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level debug"
+CMD sh -c "echo 'DEBUG: SECRET_KEY is set:' && if [ -n \"$SECRET_KEY\" ]; then echo 'YES'; else echo 'NO - NOT SET'; fi && echo 'DEBUG: All env vars:' && env | sort | grep -E '^(SECRET|DATABASE|REDIS|PORT)' | sed 's/=.*/=***/' && echo 'Starting migrations...' && alembic upgrade head && echo 'Migrations complete. Starting uvicorn on port ${PORT:-8000}...' && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level debug"
