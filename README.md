@@ -2,7 +2,7 @@
 
 > A production-ready RESTful API for managing books, authors, and genres with user authentication, reviews, Redis caching, rate limiting, OAuth social login, GraphQL, and real-time WebSocket updates.
 
-[![Live API](https://img.shields.io/badge/Live_API-Railway-blueviolet?logo=railway)](https://books-api-fastapi-production.up.railway.app/docs)
+[![Live API](https://img.shields.io/badge/Live_API-Railway-blueviolet?logo=railway)](https://books-api-fastapi-production-4ebc.up.railway.app/docs)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://www.postgresql.org/)
@@ -12,18 +12,18 @@
 
 ## 🌐 Live Demo
 
-**Try the API now:** [https://books-api-fastapi-production.up.railway.app](https://books-api-fastapi-production.up.railway.app)
+**Try the API now:** [https://books-api-fastapi-production-4ebc.up.railway.app](https://books-api-fastapi-production-4ebc.up.railway.app)
 
 | Resource | URL |
 |----------|-----|
-| Swagger UI | [/docs](https://books-api-fastapi-production.up.railway.app/docs) |
-| ReDoc | [/redoc](https://books-api-fastapi-production.up.railway.app/redoc) |
-| GraphQL Playground | [/graphql](https://books-api-fastapi-production.up.railway.app/graphql) |
-| Health Check | [/health](https://books-api-fastapi-production.up.railway.app/health) |
-| Books API | [/api/v1/books/](https://books-api-fastapi-production.up.railway.app/api/v1/books/) |
-| Authors API | [/api/v1/authors/](https://books-api-fastapi-production.up.railway.app/api/v1/authors/) |
-| Genres API | [/api/v1/genres/](https://books-api-fastapi-production.up.railway.app/api/v1/genres/) |
-| WebSocket | ws://books-api-fastapi-production.up.railway.app/ws/{channel} |
+| Swagger UI | [/docs](https://books-api-fastapi-production-4ebc.up.railway.app/docs) |
+| ReDoc | [/redoc](https://books-api-fastapi-production-4ebc.up.railway.app/redoc) |
+| GraphQL Playground | [/graphql](https://books-api-fastapi-production-4ebc.up.railway.app/graphql) |
+| Health Check | [/health](https://books-api-fastapi-production-4ebc.up.railway.app/health) |
+| Books API | [/api/v1/books/](https://books-api-fastapi-production-4ebc.up.railway.app/api/v1/books/) |
+| Authors API | [/api/v1/authors/](https://books-api-fastapi-production-4ebc.up.railway.app/api/v1/authors/) |
+| Genres API | [/api/v1/genres/](https://books-api-fastapi-production-4ebc.up.railway.app/api/v1/genres/) |
+| WebSocket | ws://books-api-fastapi-production-4ebc.up.railway.app/ws/{channel} |
 
 ## 📋 Overview
 
@@ -732,4 +732,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built by [Fabio Pita](https://github.com/FabioPita18)** | **[Live API](https://books-api-fastapi-production.up.railway.app/docs)** | **[GitHub](https://github.com/FabioPita18/books-api-fastapi)**
+**Built by [Fabio Pita](https://github.com/FabioPita18)** | **[Live API](https://books-api-fastapi-production-4ebc.up.railway.app/docs)** | **[GitHub](https://github.com/FabioPita18/books-api-fastapi)**
