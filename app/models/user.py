@@ -11,7 +11,7 @@ SQLAlchemy 2.0 Features Used:
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from app.models.review import Review
 
 
-class AuthProvider(str, Enum):
+class AuthProvider(StrEnum):
     """
     Authentication providers supported by the system.
 

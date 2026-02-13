@@ -33,7 +33,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from app.services.websocket import get_connection_manager
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Types of events that can be published."""
 
     # Book events

@@ -19,7 +19,7 @@ Usage:
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from fastapi import WebSocket
@@ -27,7 +27,7 @@ from fastapi import WebSocket
 logger = logging.getLogger(__name__)
 
 
-class ChannelType(str, Enum):
+class ChannelType(StrEnum):
     """Types of WebSocket channels."""
 
     BOOKS = "books"  # All book events
