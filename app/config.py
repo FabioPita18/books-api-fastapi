@@ -31,10 +31,14 @@ PHASE 1 vs PHASE 2:
 - Phase 2: Redis, caching, rate limiting (commented out)
 """
 
+import logging
+import secrets
 from functools import lru_cache
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -201,7 +205,7 @@ class Settings(BaseSettings):
     # Security Settings
     # -------------------------------------------------------------------------
     secret_key: str = Field(
-        default="REPLACE_WITH_YOUR_GENERATED_SECRET_KEY",
+        default="",
         description="Secret key for cryptographic operations (used for JWT signing)"
     )
     api_key_header: str = Field(
@@ -341,19 +345,18 @@ class Settings(BaseSettings):
     @classmethod
     def validate_secret_key(cls, v: str) -> str:
         """
-        Validate that secret_key is not a placeholder value.
+        Validate the secret_key, auto-generating one if not provided.
 
-        SECURITY: This prevents accidental deployment with insecure defaults.
-        The application will fail to start if SECRET_KEY is not properly set.
+        If SECRET_KEY is empty or contains a placeholder value, a random
+        key is generated so the app can still start. A warning is logged
+        since the generated key won't persist across restarts (JWTs will
+        be invalidated on redeploy).
 
         Args:
             v: The secret key value
 
         Returns:
-            The validated secret key
-
-        Raises:
-            ValueError: If secret key is a placeholder or too short
+            The validated (or auto-generated) secret key
         """
         placeholder_indicators = [
             "REPLACE_WITH",
@@ -362,18 +365,21 @@ class Settings(BaseSettings):
             "generate-with",
         ]
 
-        for indicator in placeholder_indicators:
-            if indicator.lower() in v.lower():
-                raise ValueError(
-                    "SECRET_KEY contains a placeholder value. "
-                    "Generate a secure key with: openssl rand -hex 32"
-                )
+        needs_generation = not v or len(v) < 32
+        if not needs_generation:
+            for indicator in placeholder_indicators:
+                if indicator.lower() in v.lower():
+                    needs_generation = True
+                    break
 
-        if len(v) < 32:
-            raise ValueError(
-                "SECRET_KEY must be at least 32 characters long. "
-                "Generate a secure key with: openssl rand -hex 32"
+        if needs_generation:
+            generated = secrets.token_hex(32)
+            logger.warning(
+                "SECRET_KEY not set or invalid — auto-generated a random key. "
+                "JWTs will be invalidated on each restart. "
+                "Set SECRET_KEY env var for persistent sessions."
             )
+            return generated
 
         return v
 
