@@ -360,19 +360,12 @@ Rate limiting will be implemented to ensure fair usage.
 
     @app.get(
         "/",
-        tags=["Root"],
-        summary="API root",
-        description="Welcome message and API information.",
+        include_in_schema=False,
     )
-    async def root() -> dict:
-        """Root endpoint with API information."""
-        return {
-            "message": f"Welcome to {settings.app_name}",
-            "version": settings.api_version,
-            "docs": "/docs",
-            "graphql": "/graphql",
-            "health": "/health",
-        }
+    async def root():
+        """Redirect root to Swagger UI documentation."""
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/docs")
 
     return app
 
